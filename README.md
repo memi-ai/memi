@@ -10,6 +10,10 @@ cd memi
 npm install --prefix memi-server
 npm install --prefix memi-client
 ```
+或
+```bash
+npm i -g memi-agent
+```
 
 ## 启动
 

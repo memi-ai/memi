@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  memi:
+    image: memi-ai/memi:latest
+    build: .
+    container_name: memi-agent
+    ports:
+      - "3001:3001"
+    volumes:
+      # 持久化配置、技能、会话
+      - memi-config:/app/memi-config
+      # 可选：挂载 workspace 目录
+      - ./workspace:/app/memi-config/workspace:ro
+    environment:
+      - PORT=3001
+      - MEMI_GATEWAY_TOKEN=${MEMI_GATEWAY_TOKEN:-}
+    restart: unless-stopped
+
+volumes:
+  memi-config:

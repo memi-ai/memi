@@ -1,9 +1,10 @@
 {
   "name": "memi-agent",
   "version": "1.0.1",
-  "description": "本地 AI 助手 — 终端 + 网页双模式，63 个工具，80+ 提供商，4 个消息渠道",
+  "description": "本地 AI 助手 — 终端 + 网页双模式，65+ 工具（含浏览器自动化、向量记忆搜索），80+ 模型商，4 个消息渠道，ClawHub 兼容，Docker 支持",
   "bin": {
-    "memi": "memi-agent.js"
+    "memi": "memi-agent.js",
+    "memi-agent": "memi-agent.js"
   },
   "files": [
     "memi-agent.js",
@@ -17,6 +18,8 @@
     "memi-server/utils/agent.js",
     "memi-server/utils/aiProxy.js",
     "memi-server/utils/importSkill.js",
+    "memi-server/utils/vectorStore.js",
+    "memi-server/utils/browser.js",
     "memi-client/dist/",
     "memi-config/workspace/"
   ],

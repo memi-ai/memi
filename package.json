@@ -1,8 +1,10 @@
 {
   "name": "memi-agent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "本地 AI 助手 — 终端 + 网页双模式，63 个工具，80+ 提供商，4 个消息渠道",
-  "bin": { "memi": "memi-agent.js" },
+  "bin": {
+    "memi": "memi-agent.js"
+  },
   "files": [
     "memi-agent.js",
     "README.md",
@@ -21,13 +23,24 @@
   "scripts": {
     "postinstall": "cd memi-server && npm install --omit=dev"
   },
-  "keywords": ["ai", "agent", "cli", "llm", "deepseek", "openai"],
+  "keywords": [
+    "ai",
+    "agent",
+    "cli",
+    "llm",
+    "deepseek",
+    "openai"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/memi-ai/memi.git"
   },
-  "bugs": { "url": "https://github.com/memi-ai/memi/issues" },
+  "bugs": {
+    "url": "https://github.com/memi-ai/memi/issues"
+  },
   "homepage": "https://github.com/memi-ai/memi#readme",
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

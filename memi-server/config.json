@@ -1,0 +1,17 @@
+{
+  "api1": {
+    "baseUrl": "https://api.deepseek.com/v1",
+    "apiKey": "sk-149c1dc25a2d40b8bebd654826f603a4",
+    "model": "deepseek-chat"
+  },
+  "api2": {
+    "baseUrl": "",
+    "apiKey": "",
+    "model": ""
+  },
+  "api3": {
+    "baseUrl": "",
+    "apiKey": "",
+    "model": ""
+  }
+}

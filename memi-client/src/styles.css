@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --theme-color: #111827;
+  --theme-hover: #374151;
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #1f2937;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* 深色模式基础变量 */
+[data-theme="dark"] body,
+[data-theme="dark"] {
+  background: #111827;
+  color: #f3f4f6;
+}
+
+.theme-bg {
+  background: var(--theme-color);
+  color: #ffffff;
+}
+
+.theme-bg:hover {
+  background: var(--theme-hover);
+}
+
+.theme-bg:disabled {
+  background: #9ca3af;
+}
+
+.theme-border {
+  border-color: var(--theme-color);
+}
+
+.theme-text {
+  color: var(--theme-color);
+}
+
+.theme-progress {
+  background: var(--theme-color);
+}

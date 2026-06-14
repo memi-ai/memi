@@ -1,0 +1,6 @@
+{
+  "name": "翻译助手",
+  "type": "llm",
+  "description": "中英互译",
+  "promptTemplate": "翻译以下内容: {input}"
+}

@@ -1,0 +1,15 @@
+node_modules/
+memi-config/backups/
+memi-config/sessions/
+memi-config/agents/
+memi-config/logs/
+memi-config/cache/
+memi-config/.onboarded
+memi.bat
+memi-config/config.json
+memi-server/node_modules/
+memi-server/config.json
+memi-client/node_modules/
+memi-client/src/
+*.log
+.env

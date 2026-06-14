@@ -149,4 +149,12 @@ wss.on("connection", (ws) => {
 server.listen(PORT, () => {
   console.log(`memi-server is running on port ${PORT}`);
   console.log(`WebSocket: ws://localhost:${PORT}/api/gateway/ws`);
+
+  // 自动索引工作区文档（异步，不阻塞启动）
+  try {
+    const { indexWorkspace } = require("./utils/vectorStore");
+    indexWorkspace().then(r => {
+      if (r && r.chunks > 0) console.log(`[RAG] 向量索引完成: ${r.chunks} 块, ${r.embedded} 已嵌入`);
+    }).catch(() => {});
+  } catch {}
 });

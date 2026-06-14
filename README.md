@@ -16,6 +16,7 @@
   <a href="https://www.npmjs.com/package/memi-agent"><img src="https://img.shields.io/npm/v/memi-agent?style=for-the-badge&color=6366f1" alt="npm version"></a>
   <a href="https://github.com/memi-ai/memi/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-18+-green.svg?style=for-the-badge" alt="Node.js 18+"></a>
+  <a href="#docker"><img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white&style=for-the-badge" alt="Docker"></a>
 </p>
 
 **Memi** 是一个运行在你本机的个人 AI 助手。它在终端里跟你聊天，在网页上给你看板，还打通了 Telegram / 飞书 / 企业微信 / QQ —— 所有渠道共享同一个会话和记忆。
@@ -27,12 +28,12 @@
 ## 快速开始
 
 ```bash
+# 全局安装
 npm install -g memi-agent
 memi onboard
-```
-或
-```bash
-npm i -g memi-agent
+
+# 或者一行搞定（无需安装）
+npx memi-agent onboard
 ```
 
 `memi onboard` 会引导你完成模型配置、工作区初始化、渠道接入，**macOS / Linux / Windows** 都支持。
@@ -51,13 +52,14 @@ memi status      # 查看当前状态
 
 - **双界面** — 终端 CLI + 网页 Dashboard，同一个后端，无缝切换。
 - **多渠道收件箱** — Telegram、飞书/Lark、企业微信、QQ，消息统一路由到 Agent 处理。
-- **60+ 工具** — 文件读写、命令执行、网络搜索、图片生成、HTTP 请求、系统信息、RAG 搜索、网页抓取、定时提醒……
+- **60+ 工具** — 文件读写、命令执行、网络搜索、图片生成、HTTP 请求、系统信息、向量记忆搜索、浏览器自动化、网页抓取、定时提醒……
 - **ClawHub 兼容** — 直接安装 OpenClaw 社区的 Skill，`clawhub install` 即装即用。
 - **多 Agent 协作** — `@agent` 语法切换/协作，每个 Agent 可以有独立的 system prompt 和模型。
 - **12 步新手引导** — 交互式 onboard，配模型、装守护进程、接渠道，一条龙。
 - **系统守护进程** — schtasks (Windows) / launchd (macOS) / systemd (Linux) 一键安装，开机自启。
 - **网关安全** — `MEMI_GATEWAY_TOKEN` 鉴权，DM 白名单，避免未授权访问。
 - **工作区文档** — SOUL.md / MEMORY.md / USER.md / IDENTITY.md / TOOLS.md 每日注入 system prompt，保持记忆连续性。
+- **浏览器自动化** — Agent 可操控真实浏览器，打开网页、点击、截图。基于 Playwright。
 - **图片管道** — 文生图 → 视觉审查 → 自动重试，直到满意。
 - **会话管理** — 保存/加载/重命名会话，支持 `/stats` 统计 Token 用量和费用。
 - **80+ 模型商** — 兼容 OpenAI API 格式的所有提供商，一键切换。
@@ -96,6 +98,9 @@ memi status      # 查看当前状态
 | `memi config` | 查看配置；`memi config edit` 重新配置 |
 | `memi update` | 检查 GitHub Release 更新 |
 | `memi server start` | 启动后端服务 |
+| `memi browser install` | 安装 Playwright + Chromium |
+| `memi rag index` | 索引工作区文档为向量库 |
+| `memi rag search <query>` | 语义搜索工作区记忆 |
 | `memi daemon install` | 安装系统守护进程（开机自启） |
 | `memi version` | 显示版本号 |
 
@@ -154,7 +159,7 @@ memi skills                  # 自动识别并加载
 
 ## 工作区文档
 
-这些文件放在 `memi-config/workspace/`，每天自动注入 Agent 的 system prompt：
+这些文件放在 `memi-config/workspace/`，每天自动注入 Agent 的 system prompt，并支持向量搜索：
 
 | 文件 | 作用 |
 |---|---|
@@ -163,6 +168,8 @@ memi skills                  # 自动识别并加载
 | `USER.md` | 用户偏好 |
 | `IDENTITY.md` | 身份设定 |
 | `TOOLS.md` | 工具使用说明 |
+
+Agent 可通过 `rag_search` 工具随时检索这些文档，无需占用每次对话的上下文窗口。
 
 ---
 
@@ -183,6 +190,25 @@ node memi-agent.js chat
 
 ---
 
+## Docker
+
+```bash
+# 克隆仓库
+git clone https://github.com/memi-ai/memi.git
+cd memi
+
+# 一键启动
+docker compose up -d
+
+# 或者单独构建
+docker build -t memi-agent .
+docker run -d -p 3001:3001 -v memi-config:/app/memi-config memi-agent
+```
+
+访问 `http://localhost:3001/dashboard`。
+
+---
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -191,6 +217,7 @@ node memi-agent.js chat
 | 后端 | Express + WebSocket |
 | 前端 | React (memi-client) + 原生 HTML Dashboard |
 | AI 协议 | OpenAI-compatible `/v1/chat/completions` |
+| 浏览器 | Playwright (Chromium) — 可选，按需安装 |
 | 图片 | pollinations.ai + 视觉审查循环 |
 | 平台 | Windows / macOS / Linux |
 

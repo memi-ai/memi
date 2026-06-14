@@ -1159,6 +1159,53 @@ const cmd = process.argv[2] || "chat";
         log("");
       } catch { fail("无法读取"); }
       break;
+    case "rag": {
+      const sub = process.argv[3];
+      if (sub === "index") {
+        log(A.b + "  索引中..." + A.r);
+        try {
+          const { indexWorkspace } = require("./memi-server/utils/vectorStore");
+          const c = loadCfg();
+          const r = await indexWorkspace(c);
+          if (r) ok(`已索引 ${r.chunks} 个文本块` + (r.embedded > 0 ? ` (${r.embedded} 已嵌入)` : ""));
+          else fail("索引失败");
+        } catch(e) { fail("索引失败: " + e.message); }
+      } else if (sub === "search") {
+        const query = process.argv.slice(4).join(" ");
+        if (!query) { log(A.g + "  用法: memi rag search <查询语句>"); break; }
+        try {
+          const { search } = require("./memi-server/utils/vectorStore");
+          const c = loadCfg();
+          const result = await search(query, c);
+          log(A.b + "\n  RAG 搜索: " + query + "\n" + A.r);
+          log(result);
+        } catch(e) { fail("搜索失败: " + e.message); }
+      } else if (sub === "stats") {
+        try {
+          const { stats } = require("./memi-server/utils/vectorStore");
+          const s = stats();
+          log(A.b + "\n  向量库统计\n" + A.r);
+          log(`  文档块: ${s.chunks}`);
+          log(`  来源文件: ${s.sources.join(", ") || "无"}`);
+          log(`  总字符: ${s.totalChars}`);
+          log(`  向量嵌入: ${s.hasEmbeddings ? "✓" : "✗ (使用关键词匹配)"}`);
+          log("");
+        } catch(e) { fail("统计失败: " + e.message); }
+      } else if (sub === "clear") {
+        try {
+          const { clearIndex } = require("./memi-server/utils/vectorStore");
+          clearIndex();
+          ok("向量索引已清除");
+        } catch(e) { fail("清除失败: " + e.message); }
+      } else {
+        log(A.b + "  memi rag <子命令>\n" + A.r);
+        log(`  ${A.ck}index${A.r}    索引工作区文档`);
+        log(`  ${A.ck}search${A.r}   搜索记忆  ${A.g}memi rag search <查询语句>${A.r}`);
+        log(`  ${A.ck}stats${A.r}    向量库统计`);
+        log(`  ${A.ck}clear${A.r}    清除索引`);
+      }
+      break;
+    }
     case "doctor": {
       let ok = true;
       log(A.b + "\n  Memi Doctor  —  诊断报告\n");
@@ -1343,6 +1390,31 @@ const cmd = process.argv[2] || "chat";
       } catch(e) { fail("打包失败: " + e.message); }
       break;
     }
+    case "browser": {
+      const sub = process.argv[3];
+      if (sub === "install") {
+        log(A.b + "  安装 Playwright + Chromium..." + A.r);
+        try {
+          const { installBrowser } = require("./memi-server/utils/browser");
+          const result = await installBrowser();
+          ok(result);
+        } catch(e) { fail("安装失败: " + e.message); }
+      } else if (sub === "test") {
+        try {
+          const { navigate, closeBrowser } = require("./memi-server/utils/browser");
+          const result = await navigate("https://example.com");
+          log(A.b + "\n  Browser Test\n" + A.r);
+          log(result.slice(0, 500));
+          await closeBrowser();
+          ok("浏览器测试通过 ✓");
+        } catch(e) { fail("测试失败: " + e.message); }
+      } else {
+        log(A.b + "  memi browser <子命令>\n" + A.r);
+        log(`  ${A.ck}install${A.r}  安装 Playwright + Chromium`);
+        log(`  ${A.ck}test${A.r}     测试浏览器是否可用`);
+      }
+      break;
+    }
     case "help": case "--help": case "-h":
       log(A.b + "\n  Memi Agent CLI\n");
       log(`  ${A.ck}chat${A.r}      对话`);
@@ -1351,9 +1423,9 @@ const cmd = process.argv[2] || "chat";
       log(`  ${A.ck}reset${A.r}    重置     ${A.ck}config${A.r}   配置`);
       log(`  ${A.ck}server${A.r}   服务     ${A.ck}skills${A.r}   技能`);
       log(`  ${A.ck}dashboard${A.r}面板     ${A.ck}sessions${A.r} 会话`);
-      log(`  ${A.ck}daemon${A.r}   守护进程  ${A.ck}update${A.r}   更新`);
+      log(`  ${A.ck}rag${A.r}      向量记忆  ${A.ck}daemon${A.r}   守护`);
+      log(`  ${A.ck}browser${A.r}  浏览器    ${A.ck}update${A.r}   更新`);
       log(`  ${A.ck}version${A.r}  版本     ${A.ck}help${A.r}     帮助`);
-      log(`  ${A.ck}help${A.r}     帮助`);
       log("");
       break;
     default:

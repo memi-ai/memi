@@ -871,6 +871,120 @@ const TOOLS = [
       }
     },
   },
+  {
+    name: "rag_search",
+    description:
+      "在工作区文档中执行语义搜索。传入查询语句，返回最相关的文档片段（SOUL.md / MEMORY.md / USER.md / IDENTITY.md / TOOLS.md）。\n" +
+      "适用场景：用户问「我之前说过什么」「我的偏好是什么」「Agent 的人设是什么」等问题时，用此工具检索长期记忆。",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "搜索查询语句" },
+      },
+      required: ["query"],
+    },
+    handler: async (args) => {
+      try {
+        const configPath = path.join(__dirname, "..", "..", "memi-config", "config.json");
+        let config = {};
+        try { config = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch {}
+        const { search } = require("./vectorStore");
+        return await search(args.query, config);
+      } catch (e) {
+        return "RAG 搜索失败: " + e.message;
+      }
+    },
+  },
+  {
+    name: "rag_index",
+    description:
+      "重建工作区文档的向量索引。当工作区文档（SOUL.md 等）被修改后，需要重新索引。此工具会读取所有工作区文档并建立向量搜索库。",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+    handler: async () => {
+      try {
+        const configPath = path.join(__dirname, "..", "..", "memi-config", "config.json");
+        let config = {};
+        try { config = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch {}
+        const { indexWorkspace } = require("./vectorStore");
+        const r = await indexWorkspace(config);
+        return `向量索引已重建：${r.chunks} 个文本块，${r.embedded} 个已嵌入向量。`;
+      } catch (e) {
+        return "索引失败: " + e.message;
+      }
+    },
+  },
+  {
+    name: "browser_navigate",
+    description:
+      "打开一个网页并获取其文本内容。url 是完整的网页地址（带 https://），返回页面标题和文本摘要。" +
+      "适用场景：用户要求查看某个网页、获取在线文档内容、抓取信息等。",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "完整网页地址，例如 https://example.com" },
+      },
+      required: ["url"],
+    },
+    handler: async (args) => {
+      try {
+        const { navigate } = require("./browser");
+        return await navigate(args.url);
+      } catch (e) {
+        if (e.message && e.message.includes("Playwright 未安装")) {
+          return e.message;
+        }
+        return "浏览器导航失败: " + e.message;
+      }
+    },
+  },
+  {
+    name: "browser_screenshot",
+    description:
+      "对当前浏览器页面截图。返回截图文件路径。适用场景：用户要求看某个页面的样子、验证页面显示等。",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+    handler: async () => {
+      try {
+        const { screenshot } = require("./browser");
+        return await screenshot();
+      } catch (e) {
+        if (e.message && e.message.includes("Playwright 未安装")) {
+          return e.message;
+        }
+        return "截图失败: " + e.message;
+      }
+    },
+  },
+  {
+    name: "browser_click",
+    description:
+      "在浏览器页面上点击一个元素。selector 是 CSS 选择器（例如 '#submit' 或 '.btn-primary'）。点击后返回新页面内容。",
+    parameters: {
+      type: "object",
+      properties: {
+        selector: { type: "string", description: "CSS 选择器，如 '#login' 或 'button.submit'" },
+      },
+      required: ["selector"],
+    },
+    handler: async (args) => {
+      try {
+        const { click } = require("./browser");
+        return await click(args.selector);
+      } catch (e) {
+        if (e.message && e.message.includes("Playwright 未安装")) {
+          return e.message;
+        }
+        return "点击失败: " + e.message;
+      }
+    },
+  },
 ];
 
 // ─── Agent 循环（提示词驱动工具调用）─────────────

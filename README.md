@@ -206,7 +206,8 @@ node memi-agent.js chat
 
 - Issues & PR: [github.com/memi-ai/memi](https://github.com/memi-ai/memi)
 - AI/vibe-coded PRs welcome! 🤖
-
+- 本项目使用deepseek-V4pro开发,框架为reaonix,如果发现了bug请及时向我反馈,邮箱:danzai268@qq.com
+- 本项目全部使用中文语言如需English,请使用openclaw/Hermes/其他Agent工具,因为我们目前没有开发English版本的意向
 ---
 
 MIT © 2025 Memi

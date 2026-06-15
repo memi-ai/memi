@@ -1,8 +1,8 @@
 export const DEFAULT_CONFIG = {
   api1: {
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    apiKey: "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",
-    model: "google/gemma-3n-e2b-it",
+    baseUrl: "",
+    apiKey: "",
+    model: "",
   },
   api2: {
     baseUrl: "https://enter.pollinations.ai",
@@ -10,10 +10,9 @@ export const DEFAULT_CONFIG = {
     model: "pollinations",
   },
   api3: {
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    apiKey:
-      "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",
-    model: "meta/llama-4-maverick-17b-128e-instruct",
+    baseUrl: "",
+    apiKey: "",
+    model: "",
   },
   maxRetry: 2,
   requireConfirmation: false,

@@ -99,6 +99,7 @@ body.clean #cleanBtn{border-color:var(--accent);color:var(--accent)}
     <button class="toggle" onclick="toggleSidebar()" title="侧边栏">☰</button>
     <span class="dot" id="dot"></span>
     <span id="st" style="font-size:12px;color:var(--dim)">就绪</span>
+    <button id="langToggle" onclick="toggleLang()" style="margin-right:4px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" title="Switch language">中</button>
     <button onclick="toggleClean()" id="cleanBtn" style="margin-left:4px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer" title="纯净模式">
   <svg id="cleanIconExpand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
   <svg id="cleanIconCollapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><polyline points="4 8 10 8 10 2"/><polyline points="20 16 14 16 14 22"/><line x1="10" y1="8" x2="4" y2="14"/><line x1="14" y1="16" x2="20" y2="10"/></svg>
@@ -273,7 +274,7 @@ async function send(){
   messages.push({role:"user",content:text});renderNew();
 
   const start=Date.now();let toolCount=0,full="",msgDiv=null;
-  document.getElementById("st").textContent="思考中...";document.getElementById("dot").className="dot";
+  document.getElementById("st").textContent=t("thinking");document.getElementById("dot").className="dot";
   rebuildToolLogs(); // 先重建，确保只显示当前会话的工具
   try{
     const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"memi-agent",messages,stream:true,thinking:getThink(),systemPrompt:""})});
@@ -305,7 +306,7 @@ async function send(){
             lastAgentEl=null;continue;
           }
           const t=d.choices?.[0]?.delta?.content||"";if(t){full+=t;
-            if(!msgDiv){messages.push({role:"assistant",content:""});msgDiv=messages[messages.length-1];document.getElementById("st").textContent="回复中"}
+            if(!msgDiv){messages.push({role:"assistant",content:""});msgDiv=messages[messages.length-1];document.getElementById("st").textContent=t("reply")}
             msgDiv.content=full;
           }
         }catch{}
@@ -366,13 +367,61 @@ inp.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.pr
 document.addEventListener("keydown",function(e){if(e.ctrlKey&&e.key==="n"){e.preventDefault();newChat()}});
 window.addEventListener("beforeunload",()=>{if(messages.length>0)saveCurrentSession()});
 
+// ─── i18n 国际化 ────────────────────────────────────────
+const I18N={
+  zh:{
+    newChat:"＋ 新对话",placeholder:"发送消息...",send:"发送",ready:"就绪",
+    monitor:"Monitor",iter:"迭代",tools:"工具",time:"耗时",tokens:"Tokens",cost:"花费",balance:"余额",
+    thinking:"思考中...",reply:"回复中",confirmTitle:"⚠️ 安全确认",
+    confirmBody:"可能触发危险操作，确认发送？",cancel:"取消",confirm:"确认发送",
+    voiceInput:"语音输入",voiceRead:"朗读回复",safeMode:"安全模式：危险操作前确认",
+    cleanMode:"纯净模式",sidebar:"侧边栏",closeSidebar:"关闭侧边栏",
+    thinkHigh:"🧠 高",thinkMid:"中",thinkLow:"低",thinkOff:"关",
+    noSessions:"—",balanceFail:"获取失败",
+  },
+  en:{
+    newChat:"＋ New Chat",placeholder:"Send a message...",send:"Send",ready:"Ready",
+    monitor:"Monitor",iter:"Iter",tools:"Tools",time:"Time",tokens:"Tokens",cost:"Cost",balance:"Balance",
+    thinking:"Thinking...",reply:"Replying",confirmTitle:"⚠️ Safety Check",
+    confirmBody:"This may trigger dangerous operations. Confirm?",cancel:"Cancel",confirm:"Send Anyway",
+    voiceInput:"Voice Input",voiceRead:"Read Aloud",safeMode:"Safe Mode: confirm before dangerous ops",
+    cleanMode:"Clean Mode",sidebar:"Sidebar",closeSidebar:"Close Sidebar",
+    thinkHigh:"🧠 High",thinkMid:"Mid",thinkLow:"Low",thinkOff:"Off",
+    noSessions:"—",balanceFail:"Failed",
+  }
+};
+let lang=localStorage.getItem("memi-lang")||"zh";
+function t(key){return (I18N[lang]&&I18N[lang][key])||I18N.zh[key]||key}
+function toggleLang(){lang=lang==="zh"?"en":"zh";localStorage.setItem("memi-lang",lang);document.getElementById("langToggle").textContent=lang==="zh"?"中":"EN";applyI18n()}
+function applyI18n(){
+  document.getElementById("inp").placeholder=t("placeholder");
+  document.getElementById("sendBtn").textContent=t("send");
+  document.getElementById("st").textContent=t("ready");
+  document.querySelector(".new-btn button").textContent=t("newChat");
+  document.querySelector(".monitor h3").textContent=t("monitor");
+  document.querySelectorAll(".monitor .row span:first-child").forEach((el,i)=>{
+    const keys=["iter","tools","time","tokens","cost","balance"];
+    if(keys[i])el.textContent=t(keys[i]);
+  });
+  document.getElementById("micBtn").title=t("voiceInput");
+  document.getElementById("voiceToggle").title=t("voiceRead");
+  document.getElementById("safeToggle").title=t("safeMode");
+  document.getElementById("cleanBtn").title=t("cleanMode");
+  document.querySelector(".header .toggle").title=t("sidebar");
+  document.querySelector(".head button").title=t("closeSidebar");
+  const thinkSel=document.getElementById("thinkLevel");
+  if(thinkSel){thinkSel.options[0].text=t("thinkHigh");thinkSel.options[1].text=t("thinkMid");thinkSel.options[2].text=t("thinkLow");thinkSel.options[3].text=t("thinkOff")}
+  document.querySelectorAll(".monitor h3")[1]&&(document.querySelectorAll(".monitor h3")[1].textContent="Tools");
+}
+if(lang==="en")document.getElementById("langToggle").textContent="EN";
+
 // ─── 安全模式 ──────────────────────────────────────────
 let safeMode=localStorage.getItem("memi-safe-mode")==="true";
 if(safeMode)document.getElementById("safeToggle").classList.add("active");
 function toggleSafeMode(){safeMode=!safeMode;localStorage.setItem("memi-safe-mode",safeMode);const el=document.getElementById("safeToggle");el.classList.toggle("active",safeMode)}
 const DANGER=["run_command","delete_file","write_file","move_file"];
 function isDangerous(t){const l=t.toLowerCase();return DANGER.some(d=>l.includes(d))||/rm\s+-rf|sudo|del\s+\/f/i.test(t)}
-function confirmSend(text,cb){if(!safeMode||!isDangerous(text))return cb();const o=document.createElement("div");o.className="confirm-overlay";o.innerHTML=`<div class="confirm-box"><h3>⚠️ 安全确认</h3><p>可能触发危险操作，确认发送？</p><div style="background:#fef2f2;border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:#991b1b;max-height:80px;overflow-y:auto">${escapeHtml(text.slice(0,300))}</div><div class="btns"><button class="btn-cancel">取消</button><button class="btn-confirm">确认发送</button></div></div>`;document.body.appendChild(o);o.querySelector(".btn-cancel").onclick=()=>o.remove();o.querySelector(".btn-confirm").onclick=()=>{o.remove();cb()};o.onclick=e=>{if(e.target===o)o.remove()}}
+function confirmSend(text,cb){if(!safeMode||!isDangerous(text))return cb();const o=document.createElement("div");o.className="confirm-overlay";o.innerHTML=`<div class="confirm-box"><h3>${t("confirmTitle")}</h3><p>${t("confirmBody")}</p><div style="background:#fef2f2;border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:#991b1b;max-height:80px;overflow-y:auto">${escapeHtml(text.slice(0,300))}</div><div class="btns"><button class="btn-cancel">${t("cancel")}</button><button class="btn-confirm">${t("confirm")}</button></div></div>`;document.body.appendChild(o);o.querySelector(".btn-cancel").onclick=()=>o.remove();o.querySelector(".btn-confirm").onclick=()=>{o.remove();cb()};o.onclick=e=>{if(e.target===o)o.remove()}}
 
 // ─── 语音功能 ──────────────────────────────────────────
 let mediaRecorder=null,audioChunks=[],isRecording=false;
@@ -447,6 +496,7 @@ async function speakText(text){
 
 // init
 (async()=>{
+  applyI18n();
   await getThink();
   try{const r=await fetch("/health");document.getElementById("dot").className=r.ok?"dot":"dot off"}catch(e){document.getElementById("dot").className="dot off"}
   // 加载上次会话或默认

@@ -60,9 +60,15 @@ memi status      # 查看当前状态
 - **网关安全** — `MEMI_GATEWAY_TOKEN` 鉴权，DM 白名单，避免未授权访问。
 - **工作区文档** — SOUL.md / MEMORY.md / USER.md / IDENTITY.md / TOOLS.md 每日注入 system prompt，保持记忆连续性。
 - **语音对话** — Dashboard 点击 🎤 说话，Agent 用 TTS 朗读回复。基于 OpenAI Whisper + TTS。
+- **安全审批** — 危险操作（命令执行/文件删除）前弹窗确认，安全可控。
 - **MCP 协议** — 接入 Model Context Protocol 生态，连接外部 MCP Server，工具无限扩展。
+- **插件系统** — `memi-config/plugins/` 自定义工具和中间件，扩展无限。
+- **长期记忆** — 自动对话摘要、跨会话记忆检索、知识库拖拽上传 PDF/TXT/MD。
+- **定时任务** — `memi cron add` 设置定时触发，Agent 自动执行。
 - **浏览器自动化** — Agent 可操控真实浏览器，打开网页、点击、截图。基于 Playwright。
 - **Docker 沙箱** — Agent 命令在容器中执行，网络隔离、内存限制、进程限制，安全可靠。
+- **中英双语** — Dashboard 一键切换，CLI 运行 `memi lang en` 全英文。
+- **PWA 可安装** — Dashboard 可安装到手机/电脑桌面，像原生 App 一样使用。
 - **图片管道** — 文生图 → 视觉审查 → 自动重试，直到满意。
 - **会话管理** — 保存/加载/重命名会话，支持 `/stats` 统计 Token 用量和费用。
 - **80+ 模型商** — 兼容 OpenAI API 格式的所有提供商，一键切换。
@@ -110,6 +116,11 @@ memi status      # 查看当前状态
 | `memi sandbox enable` | 启用 Docker 沙箱 |
 | `memi rag index` | 索引工作区文档为向量库 |
 | `memi rag search <query>` | 语义搜索工作区记忆 |
+| `memi memory summary` | 生成对话记忆摘要 |
+| `memi memory upload <file>` | 上传知识库文档 |
+| `memi cron add "<expr>" "<任务>"` | 添加定时任务 |
+| `memi plugin list` | 列出已安装插件 |
+| `memi lang en` | 切换为英文 |
 | `memi daemon install` | 安装系统守护进程（开机自启） |
 | `memi version` | 显示版本号 |
 
@@ -226,6 +237,10 @@ docker run -d -p 3001:3001 -v memi-config:/app/memi-config memi-agent
 | 后端 | Express + WebSocket |
 | 前端 | React (memi-client) + 原生 HTML Dashboard |
 | AI 协议 | OpenAI-compatible `/v1/chat/completions` |
+| 沙箱 | Docker 容器隔离 |
+| 定时 | Cron 调度器 + Agent 自动触发 |
+| 国际化 | 中英双语 (Dashboard + CLI) |
+| PWA | Service Worker + manifest.json |
 | 浏览器 | Playwright (Chromium) — 可选，按需安装 |
 | 图片 | pollinations.ai + 视觉审查循环 |
 | 平台 | Windows / macOS / Linux |

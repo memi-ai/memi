@@ -10,13 +10,52 @@ const { handleWebSocket } = require("./gateway");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 只允许本地前端开发服务访问后端接口
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "http://localhost:3001", "http://127.0.0.1:5173", "http://127.0.0.1:3001", "null"],
-    credentials: true,
-  })
-);
+// 读取暴露配置
+let exposeMode = "off";
+try {
+  const cfgFile = path.join(__dirname, "..", "memi-config", "config.json");
+  if (fs.existsSync(cfgFile)) {
+    const cfg = JSON.parse(fs.readFileSync(cfgFile, "utf8"));
+    exposeMode = cfg.expose || "off";
+  }
+} catch {}
+
+// CORS 配置
+const corsOrigins = () => {
+  if (exposeMode === "public") return true; // 允许所有来源
+  if (exposeMode === "lan") {
+    // 允许 localhost + 局域网 IP
+    const origins = ["http://localhost:5173", "http://localhost:3001", "http://127.0.0.1:5173", "http://127.0.0.1:3001", "null"];
+    try {
+      const nets = require("os").networkInterfaces();
+      Object.values(nets).forEach(iface => {
+        (iface || []).forEach(addr => {
+          if (addr.family === "IPv4") {
+            origins.push(`http://${addr.address}:5173`, `http://${addr.address}:3001`, `http://${addr.address}:${PORT}`);
+          }
+        });
+      });
+    } catch {}
+    return origins;
+  }
+  return ["http://localhost:5173", "http://localhost:3001", "http://127.0.0.1:5173", "http://127.0.0.1:3001", "null"];
+};
+
+app.use(cors({ origin: corsOrigins(), credentials: true }));
+
+// 暴露状态 API
+app.get("/api/expose", (req, res) => {
+  const nets = [];
+  try {
+    const os = require("os");
+    Object.values(os.networkInterfaces()).forEach(iface => {
+      (iface || []).forEach(addr => {
+        if (addr.family === "IPv4" && !addr.internal) nets.push(addr.address);
+      });
+    });
+  } catch {}
+  res.json({ mode: exposeMode, lanIps: nets, port: PORT });
+});
 
 // 解析 JSON 请求体（base64 图片可能较大）
 app.use(express.json({ limit: "10mb" }));
@@ -130,6 +169,57 @@ app.delete("/api/sessions/:name", (req, res) => {
     if (fs.existsSync(f)) fs.unlinkSync(f);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── MCP Server 端点 ────────────────────────────────────
+// 对外暴露 Memi 工具，任何 MCP 客户端都可接入
+app.post("/api/mcp", async (req, res) => {
+  const { method, params, id } = req.body || {};
+  try {
+    switch (method) {
+      case "initialize":
+        return res.json({
+          jsonrpc: "2.0", id,
+          result: {
+            protocolVersion: "2024-11-05",
+            capabilities: { tools: {} },
+            serverInfo: { name: "memi-mcp-server", version: "1.2.2" },
+          },
+        });
+
+      case "tools/list": {
+        const { TOOLS } = require("./utils/agent");
+        const tools = TOOLS.map(t => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: t.parameters || { type: "object", properties: {}, required: [] },
+        }));
+        return res.json({ jsonrpc: "2.0", id, result: { tools } });
+      }
+
+      case "tools/call": {
+        const { name, arguments: args } = params || {};
+        const { TOOLS } = require("./utils/agent");
+        const tool = TOOLS.find(t => t.name === name);
+        if (!tool) return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: `Tool not found: ${name}` } });
+        try {
+          const result = await tool.handler(args || {});
+          const text = typeof result === "string" ? result : JSON.stringify(result);
+          return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text }] } });
+        } catch (e) {
+          return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: "Error: " + e.message }], isError: true } });
+        }
+      }
+
+      case "notifications/initialized":
+        return res.json({ jsonrpc: "2.0" });
+
+      default:
+        return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: `Unknown method: ${method}` } });
+    }
+  } catch (e) {
+    return res.json({ jsonrpc: "2.0", id, error: { code: -32603, message: e.message } });
+  }
 });
 
 // ─── 语音 API ──────────────────────────────────────────

@@ -1569,6 +1569,145 @@ const cmd = process.argv[2] || "chat";
       log(A.g + "  已退出语音模式\n" + A.r);
       break;
     }
+    case "cron": {
+      const sub = process.argv[3];
+      if (sub === "add") {
+        const expr = process.argv[4];
+        const prompt = process.argv.slice(5).join(" ");
+        if (!expr || !prompt) { log(A.g + `  用法: memi cron add "<cron表达式>" "<提示词>"\n  示例: memi cron add "0 8 * * *" "早安播报"\n` + A.r); break; }
+        if (!/^[\d*,/\-\s]+$/.test(expr) || expr.trim().split(/\s+/).length !== 5) {
+          fail("cron 格式错误，需 5 段: 分 时 日 月 周\n  示例: 0 8 * * *");
+          break;
+        }
+        try {
+          const { addJob } = require("./memi-server/utils/cron");
+          addJob("cron_" + Date.now().toString(36), expr, prompt);
+          ok(`已添加: ${expr} → "${prompt}"`);
+        } catch(e) { fail("添加失败: " + e.message); }
+      } else if (sub === "list") {
+        try {
+          const { listJobs } = require("./memi-server/utils/cron");
+          const jobs = listJobs();
+          if (jobs.length === 0) { log(A.g + "  无定时任务\n" + A.r); break; }
+          head("定时任务");
+          jobs.forEach(j => log(`  ${A.ck}${j.name}${A.r}  ${A.g}${j.cron}${A.r} → ${j.prompt}  ${j.enabled ? A.gk + "✓" : A.rk + "✗"}`));
+          log("");
+        } catch(e) { fail("错误: " + e.message); }
+      } else if (sub === "remove" || sub === "rm") {
+        const name = process.argv[4];
+        if (!name) { log(A.g + "  用法: memi cron remove <名称>\n" + A.r); break; }
+        try {
+          const { removeJob } = require("./memi-server/utils/cron");
+          removeJob(name);
+          ok(`已删除: ${name}`);
+        } catch(e) { fail("删除失败: " + e.message); }
+      } else {
+        log(A.b + "  memi cron <子命令>\n" + A.r);
+        log(`  ${A.ck}add${A.r}     添加  ${A.g}memi cron add "0 8 * * *" "早安播报"${A.r}`);
+        log(`  ${A.ck}list${A.r}    列出`);
+        log(`  ${A.ck}remove${A.r}  删除  ${A.g}memi cron remove <名称>${A.r}`);
+      }
+      break;
+    }
+    case "plugin": {
+      const sub = process.argv[3];
+      if (sub === "install") {
+        const dir = process.argv[4];
+        if (!dir) { log(A.g + "  用法: memi plugin install <插件目录>\n" + A.r); break; }
+        try {
+          const { installPlugin } = require("./memi-server/utils/plugins");
+          const dest = installPlugin(dir);
+          ok(`插件已安装 → ${dest}`);
+          log(A.g + "  重启服务后生效: memi server restart\n" + A.r);
+        } catch(e) { fail("安装失败: " + e.message); }
+      } else if (sub === "list") {
+        try {
+          const { listPlugins } = require("./memi-server/utils/plugins");
+          const plugins = listPlugins();
+          if (plugins.length === 0) { log(A.g + "  无已安装插件\n" + A.r); break; }
+          head("已安装插件");
+          plugins.forEach(p => log(`  ${A.ck}${p.name}${A.r} v${p.version}  ${A.g}${p.description}${A.r}`));
+          log("");
+        } catch(e) { fail("错误: " + e.message); }
+      } else if (sub === "remove" || sub === "rm") {
+        const name = process.argv[4];
+        if (!name) { log(A.g + "  用法: memi plugin remove <名称>\n" + A.r); break; }
+        try {
+          const { removePlugin } = require("./memi-server/utils/plugins");
+          removePlugin(name);
+          ok(`插件 "${name}" 已删除`);
+        } catch(e) { fail("删除失败: " + e.message); }
+      } else {
+        log(A.b + "  memi plugin <子命令>\n" + A.r);
+        log(`  ${A.ck}install${A.r}  安装插件  ${A.g}memi plugin install <目录>${A.r}`);
+        log(`  ${A.ck}list${A.r}     已安装列表`);
+        log(`  ${A.ck}remove${A.r}   删除插件  ${A.g}memi plugin remove <名称>${A.r}`);
+      }
+      break;
+    }
+    case "memory": {
+      const sub = process.argv[3];
+      if (sub === "summary") {
+        log(A.b + "  生成摘要..." + A.r);
+        try {
+          const cfg = loadCfg();
+          const { autoSummarize, saveSummary } = require("./memi-server/utils/memory");
+          // 加载最近会话
+          const sessionDir = path.join(DIR, "..", "memi-config", "sessions");
+          let messages = [];
+          try {
+            const files = fs.readdirSync(sessionDir).filter(f => f.endsWith(".json"));
+            if (files.length > 0) {
+              const latest = files.sort().pop();
+              messages = JSON.parse(fs.readFileSync(path.join(sessionDir, latest), "utf8"));
+            }
+          } catch {}
+          if (messages.length < 10) { log(A.g + "  对话太少，无法生成摘要\n" + A.r); break; }
+          const summary = await autoSummarize(messages, cfg);
+          if (summary) {
+            saveSummary("cli", summary);
+            ok("摘要已保存: " + summary.slice(0, 80) + "...");
+          } else {
+            fail("生成摘要失败");
+          }
+        } catch(e) { fail("错误: " + e.message); }
+      } else if (sub === "search") {
+        const query = process.argv.slice(4).join(" ");
+        if (!query) { log(A.g + "  用法: memi memory search <查询>\n" + A.r); break; }
+        try {
+          const { search } = require("./memi-server/utils/vectorStore");
+          const cfg = loadCfg();
+          const result = await search("MEMORY: " + query, cfg);
+          log(A.b + "\n  记忆搜索: " + query + "\n" + A.r);
+          log(result);
+        } catch(e) { fail("搜索失败: " + e.message); }
+      } else if (sub === "upload") {
+        const file = process.argv[4];
+        if (!file) { log(A.g + "  用法: memi memory upload <文件路径>\n" + A.r); break; }
+        if (!fs.existsSync(file)) { fail("文件不存在: " + file); break; }
+        try {
+          const { uploadKnowledge } = require("./memi-server/utils/memory");
+          const r = await uploadKnowledge(file, loadCfg());
+          ok(`已上传: ${r.file} (${r.size} 字符, ${r.chunks} 块)`);
+        } catch(e) { fail("上传失败: " + e.message); }
+      } else if (sub === "list") {
+        try {
+          const { listKnowledge } = require("./memi-server/utils/memory");
+          const files = listKnowledge();
+          if (files.length === 0) { log(A.g + "  知识库为空\n" + A.r); break; }
+          head("知识库");
+          files.forEach(f => log(`  ${A.ck}${f.name}${A.r}  ${A.g}${f.size}B  ${new Date(f.time).toLocaleDateString()}`));
+          log("");
+        } catch(e) { fail("错误: " + e.message); }
+      } else {
+        log(A.b + "  memi memory <子命令>\n" + A.r);
+        log(`  ${A.ck}summary${A.r}  生成对话摘要`);
+        log(`  ${A.ck}search${A.r}   搜索记忆  ${A.g}memi memory search <查询>${A.r}`);
+        log(`  ${A.ck}upload${A.r}   上传知识  ${A.g}memi memory upload <文件>${A.r}`);
+        log(`  ${A.ck}list${A.r}     知识库列表`);
+      }
+      break;
+    }
     case "sandbox": {
       const sub = process.argv[3];
       if (sub === "enable") {
@@ -1638,7 +1777,8 @@ const cmd = process.argv[2] || "chat";
       log(`  ${A.ck}reset${A.r}    重置     ${A.ck}config${A.r}   配置`);
       log(`  ${A.ck}server${A.r}   服务     ${A.ck}skills${A.r}   技能`);
       log(`  ${A.ck}dashboard${A.r}面板     ${A.ck}sessions${A.r} 会话`);
-      log(`  ${A.ck}rag${A.r}      向量记忆  ${A.ck}daemon${A.r}   守护`);
+      log(`  ${A.ck}rag${A.r}      向量记忆  ${A.ck}memory${A.r}  记忆`);
+      log(`  ${A.ck}daemon${A.r}   守护     ${A.ck}sandbox${A.r}  沙箱`);
       log(`  ${A.ck}voice${A.r}    语音      ${A.ck}browser${A.r}  浏览器`);
       log(`  ${A.ck}mcp${A.r}      MCP       ${A.ck}sandbox${A.r}  沙箱`);
       log(`  ${A.ck}update${A.r}   更新     ${A.ck}version${A.r}  版本`);

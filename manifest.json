@@ -1,0 +1,10 @@
+{
+  "name": "Memi Agent",
+  "short_name": "Memi",
+  "description": "本地 AI 助手",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": []
+}

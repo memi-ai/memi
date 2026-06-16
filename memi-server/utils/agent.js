@@ -963,6 +963,30 @@ const TOOLS = [
     },
   },
   {
+    name: "webhook_send",
+    description: "向外部 webhook URL 发送 HTTP POST 请求。传入 url 和可选的 payload 数据。适用场景：触发外部自动化、通知第三方服务、集成 IFTTT/Zapier 等。",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "webhook URL" },
+        payload: { type: "object", description: "发送的 JSON 数据" },
+      },
+      required: ["url"],
+    },
+    handler: async (args) => {
+      try {
+        const axios = require("axios");
+        const resp = await axios.post(args.url, args.payload || {}, {
+          headers: { "Content-Type": "application/json" },
+          timeout: 10000,
+        });
+        return `状态: ${resp.status}, 响应: ${JSON.stringify(resp.data).slice(0, 1000)}`;
+      } catch (e) {
+        return "Webhook 失败: " + e.message;
+      }
+    },
+  },
+  {
     name: "browser_click",
     description:
       "在浏览器页面上点击一个元素。selector 是 CSS 选择器（例如 '#submit' 或 '.btn-primary'）。点击后返回新页面内容。",
@@ -1107,7 +1131,16 @@ async function callAgent(provider, messages, runtimeTools = {}, thinkingLevel = 
     return [];
   })();
 
-  const activeTools = [...TOOLS, ...skillTools, ...mcpTools].map((t) => {
+  // 4. 插件工具
+  const pluginTools = (() => {
+    try {
+      const { loadPlugins, getPluginTools } = require("./plugins");
+      const plugins = loadPlugins();
+      return getPluginTools(plugins);
+    } catch { return []; }
+  })();
+
+  const activeTools = [...TOOLS, ...skillTools, ...mcpTools, ...pluginTools].map((t) => {
     if (runtimeTools[t.name]) return { ...t, handler: runtimeTools[t.name] };
     if (t.handler) return t;
     return null;

@@ -23,6 +23,11 @@
     "memi-server/utils/voice.js",
     "memi-server/utils/mcp.js",
     "memi-server/utils/sandbox.js",
+    "memi-server/utils/memory.js",
+    "memi-server/utils/plugins.js",
+    "memi-server/utils/cron.js",
+    "manifest.json",
+    "sw.js",
     "memi-client/dist/",
     "memi-config/workspace/"
   ],

@@ -88,6 +88,13 @@ app.get("/docs", (req, res) => {
   res.redirect("/dashboard");
 });
 
+app.get("/manifest.json", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "manifest.json"));
+});
+app.get("/sw.js", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "sw.js"));
+});
+
 app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "memi-dashboard.html"));
 });
@@ -192,6 +199,19 @@ server.listen(PORT, () => {
       if (r && r.chunks > 0) console.log(`[RAG] 向量索引完成: ${r.chunks} 块, ${r.embedded} 已嵌入`);
     }).catch(() => {});
   } catch {}
+
+  // 启动定时任务调度
+  try {
+    const { startScheduler } = require("./utils/cron");
+    const { callAgent } = require("./utils/agent");
+    startScheduler(async (job) => {
+      const configPath = path.join(__dirname, "..", "memi-config", "config.json");
+      const cfg = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, "utf8")) : { api1: {} };
+      const result = await callAgent(cfg.api1, [{ role: "user", content: job.prompt }], {}, "high");
+      console.log(`[Cron] "${job.name}" 结果:`, (result.answer || "").slice(0, 200));
+    });
+    console.log("[Cron] 定时任务调度已启动");
+  } catch (e) { console.warn("[Cron] 启动失败:", e.message); }
 
   // 读取沙箱配置
   try {

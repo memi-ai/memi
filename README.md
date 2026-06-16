@@ -258,7 +258,6 @@ docker run -d -p 3001:3001 -v memi-config:/app/memi-config memi-agent
 - Issues & PR: [github.com/memi-ai/memi](https://github.com/memi-ai/memi)
 - AI/vibe-coded PRs welcome! 🤖
 - 本项目使用deepseek-V4pro开发,框架为reaonix,如果发现了bug请及时向我反馈,邮箱:danzai268@qq.com
-- 本项目全部使用中文语言如需English,请使用openclaw/Hermes/其他Agent工具,因为我们目前没有开发English版本的意向
 - memiAI的即刻:https://web.okjike.com/u/6cb55457-5724-4410-bb26-7315d537c9f8
 - memiAI的掘金:https://juejin.cn/user/903124233517066
 ---

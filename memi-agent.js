@@ -48,6 +48,47 @@ function log(...a) { console.log(a.join("") + A.r); }
 function ok(t) { log(A.gk + "  ✓ " + t + A.r); }
 function warn(t) { log(A.yk + "  ⚠ " + t + A.r); }
 function fail(t) { log(A.rk + "  ✗ " + t + A.r); }
+
+// ─── i18n ────────────────────────────────────────────
+let _lang = "zh";
+try { const c = JSON.parse(fs.readFileSync(CONFIG,"utf8")); if(c.lang==="en") _lang="en"; } catch {}
+const L = {
+  "chat":"对话","status":"状态","config":"配置","skills":"技能","sessions":"会话","onboard":"引导",
+  "dashboard":"面板","server":"服务","doctor":"诊断","update":"更新","version":"版本","help":"帮助",
+  "daemon":"守护进程","reset":"重置","agent":"Agent","voice":"语音","browser":"浏览器",
+  "mcp":"MCP","sandbox":"沙箱","memory":"记忆","plugin":"插件","cron":"定时","rag":"向量记忆",
+  "ch":"chat","st":"status","cf":"config","sk":"skills","ss":"sessions","ob":"onboard",
+  "db":"dashboard","sv":"server","dr":"doctor","up":"update","vr":"version","hp":"help",
+  "ready":"就绪","saved":"已保存","deleted":"已删除","error":"错误","cancel":"取消","confirm":"确认",
+  "noConfig":"未找到配置，请先运行 memi onboard","loading":"加载中...","done":"完成",
+  "restartTip":"重启服务后生效: memi server restart","installed":"已安装","removed":"已删除",
+  "notFound":"未找到","empty":"无","failed":"失败","success":"成功","unknown":"未知命令",
+  "seeHelp":"输入 memi help 查看所有命令","noApiKey":"未配置 API Key",
+  "serverRunning":"运行中","serverStopped":"未启动","allGood":"一切正常",
+  "newSession":"新对话","voiceMode":"语音对话模式","voiceExit":"输入 /voice exit 退出",
+  "recording":"正在录音...(按 Enter 停止)","transcribing":"转写中...","transcribeFail":"转写失败",
+  "sendMsg":"发送消息...","voiceWinTip":"Windows 录音请使用 Dashboard 的 🎤 按钮",
+  "continueRec":"继续录音? (Enter/yes 继续, 其他退出):","voiceExitMsg":"已退出语音模式",
+};
+function _(key) { if(_lang==="en"){ const en={
+  chat:"Chat",status:"Status",config:"Config",skills:"Skills",sessions:"Sessions",onboard:"Onboard",
+  dashboard:"Dashboard",server:"Server",doctor:"Doctor",update:"Update",version:"Version",help:"Help",
+  daemon:"Daemon",reset:"Reset",agent:"Agent",voice:"Voice",browser:"Browser",
+  mcp:"MCP",sandbox:"Sandbox",memory:"Memory",plugin:"Plugin",cron:"Cron",rag:"Vector Memory",
+  ready:"Ready",saved:"Saved",deleted:"Deleted",error:"Error",cancel:"Cancel",confirm:"Confirm",
+  noConfig:"No config found. Run: memi onboard",loading:"Loading...",done:"Done",
+  restartTip:"Restart server to apply: memi server restart",installed:"Installed",removed:"Removed",
+  notFound:"Not found",empty:"Empty",failed:"Failed",success:"Success",unknown:"Unknown command",
+  seeHelp:"Type memi help for commands",noApiKey:"API Key not configured",
+  serverRunning:"Running",serverStopped:"Not running",allGood:"All good",
+  newSession:"New Chat",voiceMode:"Voice Mode",voiceExit:"Type /voice exit to quit",
+  recording:"Recording... (press Enter to stop)",transcribing:"Transcribing...",transcribeFail:"Transcription failed",
+  sendMsg:"Send a message...",voiceWinTip:"Use Dashboard 🎤 button for Windows recording",
+  continueRec:"Continue recording? (Enter/yes to continue, anything else to exit):",voiceExitMsg:"Voice mode exited",
+ }[key]; if(en) return en } return key in L?L[key]:key }
+
+// ─── 语言切换 CLI ────────────────────────────────────
+function setLang(l) { _lang=l; try { const c=JSON.parse(fs.readFileSync(CONFIG,"utf8"));c.lang=l;fs.writeFileSync(CONFIG,JSON.stringify(c,null,2)); } catch {} }
 function head(t) { log("\n" + A.b + A.wk + "  " + t + A.r); }
 function pair(k, v) { log(`  ${A.g}${k}${A.r}  ${A.wk}${v}`); }
 
@@ -1771,24 +1812,29 @@ const cmd = process.argv[2] || "chat";
     }
     case "help": case "--help": case "-h":
       log(A.b + "\n  Memi Agent CLI\n");
-      log(`  ${A.ck}chat${A.r}      对话`);
-      log(`  ${A.ck}status${A.r}    状态     ${A.ck}doctor${A.r}   诊断`);
-      log(`  ${A.ck}agent${A.r}    信息     ${A.ck}onboard${A.r}  引导`);
-      log(`  ${A.ck}reset${A.r}    重置     ${A.ck}config${A.r}   配置`);
-      log(`  ${A.ck}server${A.r}   服务     ${A.ck}skills${A.r}   技能`);
-      log(`  ${A.ck}dashboard${A.r}面板     ${A.ck}sessions${A.r} 会话`);
-      log(`  ${A.ck}rag${A.r}      向量记忆  ${A.ck}memory${A.r}  记忆`);
-      log(`  ${A.ck}daemon${A.r}   守护     ${A.ck}sandbox${A.r}  沙箱`);
-      log(`  ${A.ck}voice${A.r}    语音      ${A.ck}browser${A.r}  浏览器`);
-      log(`  ${A.ck}mcp${A.r}      MCP       ${A.ck}sandbox${A.r}  沙箱`);
-      log(`  ${A.ck}update${A.r}   更新     ${A.ck}version${A.r}  版本`);
-      log(`  ${A.ck}version${A.r}  版本     ${A.ck}help${A.r}     帮助`);
-      log(`  ${A.ck}help${A.r}     帮助`);
+      log(`  ${A.ck}chat${A.r}      ${_("chat")}      ${A.ck}status${A.r}    ${_("status")}`);
+      log(`  ${A.ck}agent${A.r}     ${_("agent")}      ${A.ck}onboard${A.r}  ${_("onboard")}`);
+      log(`  ${A.ck}reset${A.r}     ${_("reset")}      ${A.ck}config${A.r}   ${_("config")}`);
+      log(`  ${A.ck}server${A.r}   ${_("server")}      ${A.ck}skills${A.r}   ${_("skills")}`);
+      log(`  ${A.ck}dashboard${A.r}${_("dashboard")}    ${A.ck}sessions${A.r} ${_("sessions")}`);
+      log(`  ${A.ck}rag${A.r}      ${_("rag")}  ${A.ck}memory${A.r}  ${_("memory")}`);
+      log(`  ${A.ck}daemon${A.r}   ${_("daemon")}    ${A.ck}sandbox${A.r}  ${_("sandbox")}`);
+      log(`  ${A.ck}voice${A.r}    ${_("voice")}      ${A.ck}browser${A.r}  ${_("browser")}`);
+      log(`  ${A.ck}mcp${A.r}      ${_("mcp")}        ${A.ck}plugin${A.r}   ${_("plugin")}`);
+      log(`  ${A.ck}cron${A.r}     ${_("cron")}      ${A.ck}update${A.r}   ${_("update")}`);
+      log(`  ${A.ck}version${A.r}  ${_("version")}    ${A.ck}help${A.r}     ${_("help")}`);
+      log(`  ${A.ck}lang${A.r}     Language   ${A.g}memi lang zh|en${A.r}`);
       log("");
       break;
+    case "lang": {
+      const la = process.argv[3];
+      if (la === "zh" || la === "en") { setLang(la); ok("Language → " + (la==="zh"?"中文":"English")); }
+      else { log(A.g + "  memi lang zh|en  (" + (_lang==="zh"?"当前 中文":"Current: English") + ")"); }
+      break;
+    }
     default:
-      log(A.yk + "  未知命令: " + cmd);
-      log(A.g + "  输入 memi help 查看所有命令");
+      log(A.yk + "  " + _("unknown") + ": " + cmd);
+      log(A.g + "  " + _("seeHelp"));
       break;
   }
 })();

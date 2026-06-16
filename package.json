@@ -1,6 +1,6 @@
 {
   "name": "memi-agent",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "本地 AI 助手 — 终端 + 网页双模式，65+ 工具（含浏览器自动化、向量记忆搜索），80+ 模型商，4 个消息渠道，ClawHub 兼容，Docker 支持",
   "bin": {
     "memi": "memi-agent.js",

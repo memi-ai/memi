@@ -31,7 +31,17 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 // 对 /api/gateway/* 和 /api/v1/* 启用认证（Express 不认数组，分开写）
-app.use("/api/gateway", authMiddleware);
+// 但跳过渠道 webhook 路由（Discord/Slack/钉钉 需要接收外部回调）
+const gatewayAuthMiddleware = (req, res, next) => {
+  if (req.path.startsWith("/gateway/discord") || req.path.startsWith("/gateway/slack") || req.path.startsWith("/gateway/dingtalk")) {
+    return next();
+  }
+  if (req.path.startsWith("/gateway/telegram") || req.path.startsWith("/gateway/feishu") || req.path.startsWith("/gateway/wecom") || req.path.startsWith("/gateway/qq")) {
+    return next();
+  }
+  return authMiddleware(req, res, next);
+};
+app.use("/api/gateway", gatewayAuthMiddleware);
 app.use("/api/v1", authMiddleware);
 
 // 健康检查接口
@@ -115,6 +125,31 @@ app.delete("/api/sessions/:name", (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── 语音 API ──────────────────────────────────────────
+app.post("/api/voice/transcribe", async (req, res) => {
+  try {
+    const { audio } = req.body;
+    if (!audio) return res.status(400).json({ error: "缺少音频数据" });
+    const { transcribe } = require("./utils/voice");
+    const text = await transcribe(audio);
+    res.json({ success: true, text });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post("/api/voice/speak", async (req, res) => {
+  try {
+    const { text, voice } = req.body;
+    if (!text) return res.status(400).json({ error: "缺少文字" });
+    const { speak } = require("./utils/voice");
+    const audioBase64 = await speak(text, null, voice || "alloy");
+    res.json({ success: true, audio: audioBase64 });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // 挂载 API 路由
 app.use("/api", apiRoutes);
 
@@ -156,5 +191,48 @@ server.listen(PORT, () => {
     indexWorkspace().then(r => {
       if (r && r.chunks > 0) console.log(`[RAG] 向量索引完成: ${r.chunks} 块, ${r.embedded} 已嵌入`);
     }).catch(() => {});
+  } catch {}
+
+  // 读取沙箱配置
+  try {
+    const configPath = path.join(__dirname, "..", "memi-config", "config.json");
+    if (fs.existsSync(configPath)) {
+      const cfg = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (cfg.sandbox?.enabled) {
+        const { setEnabled } = require("./utils/sandbox");
+        setEnabled(true);
+        console.log("[Sandbox] 沙箱模式已启用");
+      }
+    }
+  } catch {}
+
+  // 预加载 MCP Server（异步）
+  try {
+    const { loadMcpServers, getMcpTools } = require("./utils/mcp");
+    loadMcpServers().then(servers => {
+      if (servers.length > 0) {
+        const allTools = getMcpTools(servers);
+        // 缓存到 mcp-cache.json 供 Agent 使用
+        const cachePath = path.join(__dirname, "..", "memi-config", "mcp-cache.json");
+        const cache = {
+          servers: servers.map(s => ({
+            name: s.config.name,
+            command: s.config.command,
+            args: s.config.args || [],
+            env: s.config.env || {},
+          })),
+          tools: allTools.map(t => ({
+            name: t.name,
+            originalName: t.name.replace(/^mcp_[^_]+_/, ""),
+            server: t.name.split("_")[1] || s.config?.name || "mcp",
+            description: t.description,
+            parameters: t.parameters,
+          })),
+        };
+        fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+        fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2));
+        console.log(`[MCP] ${servers.length} 个 Server, ${allTools.length} 个工具已缓存`);
+      }
+    }).catch(e => console.warn("[MCP] 预加载失败:", e.message));
   } catch {}
 });

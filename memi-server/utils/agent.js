@@ -1064,7 +1064,50 @@ async function callAgent(provider, messages, runtimeTools = {}, thinkingLevel = 
     } catch { return []; }
   })();
 
-  const activeTools = [...TOOLS, ...skillTools].map((t) => {
+  // 3. MCP Server 工具（启动时加载一次，缓存结果）
+  const mcpTools = (() => {
+    try {
+      const mcpCachePath = path.join(__dirname, "..", "..", "memi-config", "mcp-cache.json");
+      if (fs.existsSync(mcpCachePath)) {
+        const cache = JSON.parse(fs.readFileSync(mcpCachePath, "utf8"));
+        return (cache.tools || []).map(t => ({ ...t, handler: async (args) => {
+          const { spawn } = require("child_process");
+          const config = cache.servers?.find(s => s.name === t.server);
+          if (!config) return `MCP server "${t.server}" 未找到`;
+          return new Promise((resolve, reject) => {
+            const proc = spawn(config.command, config.args || [], {
+              stdio: ["pipe", "pipe", "pipe"],
+              env: { ...process.env, ...(config.env || {}) },
+            });
+            let buf = "", id = Date.now();
+            proc.stdout.on("data", d => {
+              buf += d.toString();
+              try {
+                const lines = buf.split("\n");
+                for (const line of lines) {
+                  const msg = JSON.parse(line);
+                  if (msg.id === id) {
+                    proc.kill();
+                    if (msg.error) reject(new Error(msg.error.message));
+                    else resolve(msg.result?.content?.map(c => c.text || "").join("\n") || JSON.stringify(msg.result));
+                  }
+                }
+              } catch {}
+            });
+            proc.stdin.write(JSON.stringify({jsonrpc:"2.0",id,method:"initialize",params:{protocolVersion:"2024-11-05",capabilities:{},clientInfo:{name:"memi",version:"1.0"}}})+"\n");
+            proc.stdin.write(JSON.stringify({jsonrpc:"2.0",method:"notifications/initialized"})+"\n");
+            setTimeout(() => {
+              proc.stdin.write(JSON.stringify({jsonrpc:"2.0",id,method:"tools/call",params:{name:t.originalName,arguments:args}})+"\n");
+            }, 500);
+            setTimeout(() => { proc.kill(); reject(new Error("MCP 超时")); }, 30000);
+          });
+        }}));
+      }
+    } catch {}
+    return [];
+  })();
+
+  const activeTools = [...TOOLS, ...skillTools, ...mcpTools].map((t) => {
     if (runtimeTools[t.name]) return { ...t, handler: runtimeTools[t.name] };
     if (t.handler) return t;
     return null;

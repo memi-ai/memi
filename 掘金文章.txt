@@ -1,0 +1,140 @@
+我用 deepseek 徒手搓了个本地 AI 助手 — 66 个工具、4 个渠道、支持 80+ 模型商
+
+缘起
+
+前阵子看到 OpenClaw，一个开源的本地 AI Agent 框架，功能很强——多渠道消息接入、工具调用、技能生态——但部署门槛不低，依赖 pnpm workspace、需要编译 TypeScript、渠道配置也偏复杂。
+
+我就想：能不能做一个「装上就能跑」的版本？npm 全局安装、一行命令搞定、支持国内常用的聊天渠道。正好 deepseek 的代码能力够强，就让它帮我写了。
+
+于是有了 Memi。
+
+Memi 是什么
+
+Memi 是一个跑在你本机上的个人 AI 助手。三种使用方式：
+
+终端 CLI — memi chat 进去就聊，跟用 ChatGPT 一样
+网页 Dashboard — memi dashboard，可视化面板，聊天+监控+配置
+聊天软件 — Telegram / 飞书 / 企业微信 / QQ，消息统一路由到 Agent
+
+所有渠道共享同一个会话和记忆。你在终端跟它说的话，手机上通过 Telegram 打开也能接着聊。
+
+怎么装
+
+Node.js 18+ 就行：
+
+npm install -g memi-agent
+memi onboard
+memi chat
+
+或者一行搞定（npx，无需安装）：
+npx memi-agent onboard
+
+memi onboard 会交互式引导你完成：
+1. 选择 AI 模型（DeepSeek / OpenAI / 通义千问 / Moonshot / 智谱……）
+2. 填 API Key
+3. 连接聊天渠道（Telegram / 飞书 / 企业微信 / QQ）
+4. 安装系统守护进程（开机自启）
+
+Windows / macOS / Linux 全支持。
+
+66 个内置工具
+
+Agent 自带 66 个工具，可以操作你的电脑：
+
+文件系统 — 列出目录、读文件、写文件、移动、删除、搜索文件名、搜索内容
+命令行 — 执行任意 shell 命令（Windows/Linux 自适应，30s 超时）
+网络 — HTTP 请求、网页搜索（DuckDuckGo + Bing）、网页抓取
+图片 — AI 生图（pollinations.ai 免费）+ 视觉审查 + 自动重试
+系统 — 获取时间、IP 定位、系统信息
+记忆 — RAG 向量搜索（embedding + 余弦相似度 + 关键词回退）
+浏览器 — Playwright 操控真实浏览器：导航、点击、截图
+技能 — 安装/运行 ClawHub 技能、对话中动态创建技能
+会话 — 保存/加载/重命名会话、统计 Token 用量和费用
+定时 — 定时提醒、日程管理
+多 Agent — @agent 语法切换/协作，每个 Agent 独立 system prompt 和模型
+
+Agent 不会「建议你去试试」——它直接动手。你让它搜文件，它就搜；你让它写脚本，它写完了立刻跑。
+
+渠道支持
+
+Telegram — Webhook — memi telegram <token>
+飞书 / Lark — Webhook + WebSocket 长连接 — memi feishu <token>
+企业微信 — Webhook — memi wecom <key>
+QQ — Webhook (go-cqhttp) — memi qq <token>
+
+所有渠道的消息统一路由到 Agent 处理，Dashboard 里可以实时看到每条消息和工具调用。支持 MEMI_GATEWAY_TOKEN 鉴权和 DM 白名单。
+
+ClawHub 兼容
+
+Memi 兼容 OpenClaw 社区的 ClawHub 技能生态。别人写好的技能直接装：
+
+npm install -g clawhub
+clawhub install weather
+memi skills  # 自动识别并加载
+
+也可以在对话中用 /import_skill <url> 从 GitHub 直接导入。
+
+Docker 部署
+
+一条命令：
+
+git clone https://github.com/memi-ai/memi.git
+cd memi
+docker compose up -d
+
+访问 http://localhost:3001/dashboard。
+
+技术架构
+
+memi-agent.js —— CLI 入口（1400+ 行）
+    │
+    ├── Express Server (memi-server/index.js)
+    │   ├── /api/v1/chat/completions  ← OpenAI 兼容
+    │   ├── /api/gateway/telegram/*   ← 渠道 webhook
+    │   ├── /api/gateway/feishu       ← 飞书事件
+    │   ├── /api/gateway/wecom/*      ← 企业微信
+    │   └── /api/gateway/qq/*         ← QQ
+    │
+    ├── Agent Core (utils/agent.js)
+    │   ├── 66 个工具定义 + Handler
+    │   ├── 工作区文档注入（SOUL.md / MEMORY.md 等）
+    │   └── 8 轮工具调用循环
+    │
+    ├── Vector Store (utils/vectorStore.js)
+    │   ├── 文档分块 → Embedding → 余弦搜索
+    │   └── 无 Embedding API 时自动回退关键词
+    │
+    └── Browser (utils/browser.js)
+        └── Playwright → Chromium 无头浏览器
+
+为什么用 deepseek 开发
+
+整个项目的 80%+ 代码由 deepseek 生成。说说真实体验：
+
+长处：
+- 代码生成又快又准，工具调用格式一次就写对
+- 善于理解架构意图，能把模糊需求转化成可用代码
+- 便宜——整个开发过程 API 费用不到 10 块钱
+
+短板：
+- 长文件容易忘上下文，需要在 prompt 里反复提醒
+- 对 Windows 路径不太熟悉，出现过路径拼接 bug
+- 有时候改 A 会忘了同步改 B，需要人工 review
+
+总的来说，作为编程搭档非常靠谱，但需要人来把关边界条件和安全性。
+
+待做
+
+- 向量数据库升级（目前是 JSON 文件 + 内存搜索）
+- 更多渠道（Discord / Slack / 钉钉）
+- 语音输入（Whisper 本地）
+- 沙箱模式（Docker 容器里运行 Agent）
+- 更好的多 Agent 协作面板
+
+欢迎提 Issue 和 PR。
+
+链接
+
+GitHub: github.com/memi-ai/memi
+npm: npmjs.com/package/memi-agent
+MIT 开源

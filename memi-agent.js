@@ -1239,8 +1239,10 @@ const cmd = process.argv[2] || "chat";
       pair("迭代", "8 轮上限");
       log("");
       break;
-    case "telegram": case "feishu": case "wecom": case "qq": {
-      const ch = cmd === "telegram" ? "telegram" : cmd === "feishu" ? "feishu" : cmd === "wecom" ? "wecom" : "qq";
+    case "telegram": case "feishu": case "wecom": case "qq":
+    case "discord": case "slack": case "dingtalk": {
+      const chNamesAll = { telegram: "Telegram", feishu: "飞书", wecom: "企业微信", qq: "QQ", discord: "Discord", slack: "Slack", dingtalk: "钉钉" };
+      const ch = cmd;
       const token = process.argv[3];
       if (!token) {
         log(A.g + `  用法: memi ${ch} <token/key>`);
@@ -1251,8 +1253,7 @@ const cmd = process.argv[2] || "chat";
         log(A.g + `  2. 运行: memi ${ch} <token>`);
         break;
       }
-      const chNames = { telegram: "Telegram", feishu: "飞书", wecom: "企业微信", qq: "QQ" };
-      out(A.g + `  连接 ${chNames[ch]}... `);
+      out(A.g + `  连接 ${chNamesAll[ch] || ch}... `);
       try {
         const ngrokUrl = "https://pyromania-strenuous-sinuous.ngrok-free.dev";
         if (ch === "telegram") {
@@ -1279,6 +1280,26 @@ const cmd = process.argv[2] || "chat";
           log(A.gk + "✓ QQ 端点就绪" + A.r);
           log(A.g + "  Webhook URL: " + A.wk + webhookUrl + A.r);
           log(A.g + "  请在 go-cqhttp 或 QQ Bot 后台配置此地址");
+        } else if (ch === "discord") {
+          const webhookUrl = `${ngrokUrl}/api/gateway/discord/${token}`;
+          log(A.gk + "✓ Discord 端点就绪" + A.r);
+          log(A.g + "  1. 去 Discord Developer Portal → 创建 Bot");
+          log(A.g + "  2. 在 Bot → Privileged Gateway Intents 开启 MESSAGE CONTENT INTENT");
+          log(A.g + "  3. 复制 token，运行: memi discord <token>");
+          log(A.g + "  4. Interactions Endpoint URL: " + A.wk + webhookUrl + A.r);
+        } else if (ch === "slack") {
+          const webhookUrl = `${ngrokUrl}/api/gateway/slack/${token}`;
+          log(A.gk + "✓ Slack 端点就绪" + A.r);
+          log(A.g + "  1. api.slack.com/apps → Create New App → Socket Mode 关闭");
+          log(A.g + "  2. Event Subscriptions → Enable → Request URL: " + A.wk + webhookUrl + A.r);
+          log(A.g + "  3. Subscribe to: app_mention, message.im");
+          log(A.g + "  4. OAuth & Permissions → Bot Token Scopes: chat:write, app_mentions:read");
+        } else if (ch === "dingtalk") {
+          const webhookUrl = `${ngrokUrl}/api/gateway/dingtalk/${token}`;
+          log(A.gk + "✓ 钉钉端点就绪" + A.r);
+          log(A.g + "  1. 钉钉开放平台 → 创建机器人 → Outgoing Webhook");
+          log(A.g + "  2. Webhook URL: " + A.wk + webhookUrl + A.r);
+          log(A.g + "  3. 关键词: memi");
         }
       } catch { fail("连接失败，请确认 memi-server 已启动"); }
       break;
@@ -1390,6 +1411,200 @@ const cmd = process.argv[2] || "chat";
       } catch(e) { fail("打包失败: " + e.message); }
       break;
     }
+    case "mcp": {
+      const sub = process.argv[3];
+      if (sub === "add") {
+        const name = process.argv[4];
+        const command = process.argv[5];
+        if (!name || !command) {
+          log(A.g + "  用法: memi mcp add <名称> <命令> [args...]\n" + A.r);
+          log(A.g + "  示例: memi mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /tmp\n" + A.r);
+          break;
+        }
+        const args = process.argv.slice(6);
+        try {
+          const { addMcpServer } = require("./memi-server/utils/mcp");
+          const dest = addMcpServer(name, command, args);
+          ok(`MCP Server "${name}" 已添加 → ${dest}`);
+          log(A.g + "  重启服务后生效: memi server restart\n" + A.r);
+        } catch(e) { fail("添加失败: " + e.message); }
+      } else if (sub === "list") {
+        try {
+          const { listMcpServers } = require("./memi-server/utils/mcp");
+          const servers = listMcpServers();
+          if (servers.length === 0) {
+            log(A.g + "  无 MCP Server。用 memi mcp add <名称> <命令> 添加\n" + A.r);
+          } else {
+            head("MCP Servers");
+            servers.forEach(s => {
+              log(`  ${A.ck}${s.name}${A.r}  ${A.g}${s.command} ${(s.args||[]).join(" ")}${A.r}`);
+            });
+            log("");
+          }
+        } catch(e) { fail("错误: " + e.message); }
+      } else if (sub === "remove" || sub === "rm") {
+        const name = process.argv[4];
+        if (!name) { log(A.g + "  用法: memi mcp remove <名称>\n" + A.r); break; }
+        try {
+          const { removeMcpServer } = require("./memi-server/utils/mcp");
+          removeMcpServer(name);
+          ok(`MCP Server "${name}" 已删除`);
+        } catch(e) { fail("删除失败: " + e.message); }
+      } else {
+        log(A.b + "  memi mcp <子命令>\n" + A.r);
+        log(`  ${A.ck}add${A.r}     添加 MCP Server  ${A.g}memi mcp add <名称> <命令> [args...]${A.r}`);
+        log(`  ${A.ck}list${A.r}    列出所有 MCP Server`);
+        log(`  ${A.ck}remove${A.r}  删除 MCP Server  ${A.g}memi mcp remove <名称>${A.r}`);
+      }
+      break;
+    }
+    case "voice": {
+      log(A.b + "\n  🎤 语音对话模式\n" + A.r);
+      log(A.g + "  点击麦克风按钮开始说话，说完自动转文字并发送\n" + A.r);
+      log(A.g + "  输入 /voice exit 退出\n" + A.r);
+
+      // 启动语音模式 — 循环录音+转写+发送
+      let voiceMode = true;
+      const { execSync, spawnSync } = require("child_process");
+      const tempDir = path.join(DIR, "temp");
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+      while (voiceMode) {
+        const audioFile = path.join(tempDir, `voice_${Date.now()}.wav`);
+        log("\n" + A.yk + "  🎤 正在录音... (按 Enter 停止)" + A.r);
+
+        // Windows: 使用 PowerShell 录音
+        if (process.platform === "win32") {
+          execSync(
+            `powershell -Command "$ws=New-Object System.Media.SoundPlayer;$ws.Stop();" 2>$null`,
+            { stdio: "ignore", timeout: 2000 }
+          );
+        }
+
+        // 等待用户按 Enter 停止录音
+        // 简化：使用 sox/arecord 录音
+        if (process.platform === "win32") {
+          log(A.rk + "  Windows 录音请使用 Dashboard 的 🎤 按钮\n" + A.r);
+          log(A.g + "  (CLI 语音模式需要 sox/arecord/PowerShell 音频模块)\n" + A.r);
+          break;
+        } else if (process.platform === "darwin") {
+          execSync(`sox -d -r 16000 -c 1 -b 16 "${audioFile}" silence 1 0.1 3% 1 3.0 3% 2>&1`, { timeout: 15000, stdio: "pipe" });
+        } else {
+          execSync(`arecord -f cd -t wav -d 10 "${audioFile}" 2>/dev/null`, { timeout: 15000, stdio: "pipe" });
+        }
+
+        // 转写
+        if (fs.existsSync(audioFile)) {
+          const audioBuf = fs.readFileSync(audioFile);
+          const audioBase64 = audioBuf.toString("base64");
+          try {
+            const resp = await fetch("http://localhost:3001/api/voice/transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio: audioBase64 }),
+            });
+            const data = await resp.json();
+            if (data.success && data.text) {
+              log(A.g + "  📝 " + data.text + A.r);
+              // 发送到 Agent
+              const axios = require("axios");
+              const resp2 = await axios.post("http://localhost:3001/api/v1/chat/completions", {
+                model: "memi-agent",
+                messages: [{ role: "user", content: data.text }],
+                stream: true,
+                thinking: "high",
+              }, { responseType: "stream", timeout: 120000 });
+              let fullResp = "";
+              resp2.data.on("data", chunk => {
+                const lines = chunk.toString().split("\n");
+                for (const line of lines) {
+                  if (!line.startsWith("data: ")) continue;
+                  if (line.slice(6).trim() === "[DONE]") continue;
+                  try {
+                    const d = JSON.parse(line.slice(6));
+                    const t = d.choices?.[0]?.delta?.content || "";
+                    if (t) { process.stdout.write(t); fullResp += t; }
+                  } catch {}
+                }
+              });
+              await new Promise(resolve => resp2.data.on("end", resolve));
+              process.stdout.write("\n");
+
+              // TTS 朗读
+              if (fullResp) {
+                try {
+                  const ttsResp = await fetch("http://localhost:3001/api/voice/speak", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: fullResp.slice(0, 500) }),
+                  });
+                  const ttsData = await ttsResp.json();
+                  if (ttsData.success && ttsData.audio) {
+                    const mp3File = path.join(tempDir, `speak_${Date.now()}.mp3`);
+                    fs.writeFileSync(mp3File, Buffer.from(ttsData.audio, "base64"));
+                    if (process.platform === "win32") {
+                      execSync(`powershell -c "(New-Object Media.SoundPlayer '${mp3File}').PlaySync();"`, { stdio: "ignore", timeout: 30000 });
+                    } else {
+                      execSync(`ffplay -nodisp -autoexit "${mp3File}" 2>/dev/null`, { stdio: "ignore", timeout: 30000 });
+                    }
+                  }
+                } catch {}
+              }
+            } else {
+              log(A.rk + "  转写失败: " + (data.error || "未知") + A.r);
+            }
+          } catch (e) {
+            log(A.rk + "  转写失败: " + e.message + A.r);
+          }
+          try { fs.unlinkSync(audioFile); } catch {}
+        }
+
+        log(A.g + "\n  继续录音? (Enter/yes 继续, 其他退出): " + A.r);
+        const answer = await new Promise(resolve => {
+          const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+          rl.question("", ans => { rl.close(); resolve((ans || "").trim().toLowerCase()); });
+        });
+        if (answer && answer !== "yes" && answer !== "y" && answer !== "") voiceMode = false;
+      }
+      log(A.g + "  已退出语音模式\n" + A.r);
+      break;
+    }
+    case "sandbox": {
+      const sub = process.argv[3];
+      if (sub === "enable") {
+        try {
+          const { setEnabled, checkDocker, pullImage } = require("./memi-server/utils/sandbox");
+          if (!checkDocker()) { fail("Docker 未安装或未运行。请先安装 Docker Desktop。"); break; }
+          log(A.b + "  拉取沙箱镜像..." + A.r);
+          await pullImage();
+          setEnabled(true);
+          ok("沙箱模式已启用。Agent 将在 Docker 容器中执行命令。");
+        } catch(e) { fail("启用失败: " + e.message); }
+      } else if (sub === "disable") {
+        try {
+          const { setEnabled } = require("./memi-server/utils/sandbox");
+          setEnabled(false);
+          ok("沙箱模式已禁用。Agent 将直接在主系统执行命令。");
+        } catch(e) { fail("禁用失败: " + e.message); }
+      } else if (sub === "status") {
+        try {
+          const { status } = require("./memi-server/utils/sandbox");
+          const s = status();
+          log(A.b + "\n  沙箱状态\n" + A.r);
+          log(`  启用: ${s.enabled ? A.gk + "✓" + A.r : A.rk + "✗" + A.r}`);
+          log(`  Docker: ${s.docker ? A.gk + "✓" + A.r : A.rk + "✗ (请安装 Docker)" + A.r}`);
+          log(`  镜像: ${s.image}`);
+          log(`  超时: ${s.timeout / 1000}s`);
+          log("");
+        } catch(e) { fail("错误: " + e.message); }
+      } else {
+        log(A.b + "  memi sandbox <子命令>\n" + A.r);
+        log(`  ${A.ck}enable${A.r}   启用沙箱 (需 Docker)`);
+        log(`  ${A.ck}disable${A.r}  禁用沙箱`);
+        log(`  ${A.ck}status${A.r}   查看状态`);
+      }
+      break;
+    }
     case "browser": {
       const sub = process.argv[3];
       if (sub === "install") {
@@ -1424,8 +1639,11 @@ const cmd = process.argv[2] || "chat";
       log(`  ${A.ck}server${A.r}   服务     ${A.ck}skills${A.r}   技能`);
       log(`  ${A.ck}dashboard${A.r}面板     ${A.ck}sessions${A.r} 会话`);
       log(`  ${A.ck}rag${A.r}      向量记忆  ${A.ck}daemon${A.r}   守护`);
-      log(`  ${A.ck}browser${A.r}  浏览器    ${A.ck}update${A.r}   更新`);
+      log(`  ${A.ck}voice${A.r}    语音      ${A.ck}browser${A.r}  浏览器`);
+      log(`  ${A.ck}mcp${A.r}      MCP       ${A.ck}sandbox${A.r}  沙箱`);
+      log(`  ${A.ck}update${A.r}   更新     ${A.ck}version${A.r}  版本`);
       log(`  ${A.ck}version${A.r}  版本     ${A.ck}help${A.r}     帮助`);
+      log(`  ${A.ck}help${A.r}     帮助`);
       log("");
       break;
     default:

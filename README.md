@@ -59,7 +59,10 @@ memi status      # 查看当前状态
 - **系统守护进程** — schtasks (Windows) / launchd (macOS) / systemd (Linux) 一键安装，开机自启。
 - **网关安全** — `MEMI_GATEWAY_TOKEN` 鉴权，DM 白名单，避免未授权访问。
 - **工作区文档** — SOUL.md / MEMORY.md / USER.md / IDENTITY.md / TOOLS.md 每日注入 system prompt，保持记忆连续性。
+- **语音对话** — Dashboard 点击 🎤 说话，Agent 用 TTS 朗读回复。基于 OpenAI Whisper + TTS。
+- **MCP 协议** — 接入 Model Context Protocol 生态，连接外部 MCP Server，工具无限扩展。
 - **浏览器自动化** — Agent 可操控真实浏览器，打开网页、点击、截图。基于 Playwright。
+- **Docker 沙箱** — Agent 命令在容器中执行，网络隔离、内存限制、进程限制，安全可靠。
 - **图片管道** — 文生图 → 视觉审查 → 自动重试，直到满意。
 - **会话管理** — 保存/加载/重命名会话，支持 `/stats` 统计 Token 用量和费用。
 - **80+ 模型商** — 兼容 OpenAI API 格式的所有提供商，一键切换。
@@ -74,6 +77,9 @@ memi status      # 查看当前状态
 | 飞书 / Lark | Webhook + WebSocket 长连接 | `memi feishu <token>` |
 | 企业微信 | Webhook | `memi wecom <key>` |
 | QQ | Webhook (go-cqhttp) | `memi qq <token>` |
+| Discord | Interactions Endpoint | `memi discord <token>` |
+| Slack | Events API | `memi slack <token>` |
+| 钉钉 | Outgoing Webhook | `memi dingtalk <token>` |
 
 所有渠道共享同一个 Agent 会话，在 Dashboard 里可以实时看到每条消息和工具调用。
 
@@ -98,7 +104,10 @@ memi status      # 查看当前状态
 | `memi config` | 查看配置；`memi config edit` 重新配置 |
 | `memi update` | 检查 GitHub Release 更新 |
 | `memi server start` | 启动后端服务 |
+| `memi voice` | 语音对话模式 |
+| `memi mcp add <name> <cmd>` | 接入 MCP Server |
 | `memi browser install` | 安装 Playwright + Chromium |
+| `memi sandbox enable` | 启用 Docker 沙箱 |
 | `memi rag index` | 索引工作区文档为向量库 |
 | `memi rag search <query>` | 语义搜索工作区记忆 |
 | `memi daemon install` | 安装系统守护进程（开机自启） |

@@ -132,6 +132,24 @@ function saveConnections(conns) {
   } catch {}
 }
 
+// ─── 加载 Gateway 配置 ──────────────────────────────
+function loadGatewayConfig() {
+  try {
+    const f = path.join(__dirname, "..", "memi-config", "config.json");
+    if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, "utf8"));
+  } catch {}
+  return { api1: {} };
+}
+
+// ─── Discord 消息处理 ───────────────────────────────
+async function handleDiscordMessage(msg, token) {
+  const text = msg.content || "";
+  if (!text) return null;
+  const config = loadGatewayConfig();
+  const result = await callAgent(config.api1, [{ role: "user", content: text }], {});
+  return result.answer;
+}
+
 // ─── 连接管理 API ────────────────────────────────────
 function createConnectionRoutes(router) {
   // 获取连接列表
@@ -512,6 +530,106 @@ if(d.success)addMsg(d.response||'','agent');else addMsg('错误: '+(d.error||'')
       res.json({ reply: reply.slice(0, 2000), auto_escape: false });
     } catch(e) {
       res.json({ reply: "处理失败: " + e.message });
+    }
+  });
+
+  // Discord Bot webhook
+  router.post("/gateway/discord/:token", async (req, res) => {
+    try {
+      const body = req.body || {};
+      // Discord Interactions: type 1 = PING, type 2 = APPLICATION_COMMAND, type 3 = MESSAGE_COMPONENT
+      if (body.type === 1) return res.json({ type: 1 }); // PING → PONG
+
+      // 消息事件
+      const text = body.content || (body.data?.options?.[0]?.value) || "";
+      // Message Create 事件 (Gateway)
+      if (body.d?.content) {
+        const msg = body.d;
+        if (msg.author?.bot) return res.json({ ok: true }); // 忽略机器人自己的消息
+        const reply = await handleDiscordMessage(msg, req.params.token);
+        if (reply) {
+          await axios.post(`https://discord.com/api/v10/channels/${msg.channel_id}/messages`, {
+            content: reply.slice(0, 2000),
+          }, { headers: { Authorization: `Bot ${req.params.token}`, "Content-Type": "application/json" } }).catch(() => {});
+        }
+        return res.json({ ok: true });
+      }
+      if (!text) return res.json({ type: 4, data: { content: "请输入消息" } });
+
+      const config = loadGatewayConfig();
+      const messages = [{ role: "user", content: text }];
+      const result = await callAgent(config.api1, messages, {});
+      const reply = result.answer || "抱歉";
+
+      // 返回斜杠命令结果
+      if (body.type === 2) {
+        return res.json({ type: 4, data: { content: reply.slice(0, 2000) } });
+      }
+      res.json({ ok: true });
+    } catch(e) {
+      res.json({ type: 4, data: { content: "错误: " + e.message } });
+    }
+  });
+
+  // Slack Events API webhook
+  router.post("/gateway/slack/:token", async (req, res) => {
+    try {
+      const body = req.body || {};
+      // URL verification challenge
+      if (body.type === "url_verification") return res.json({ challenge: body.challenge });
+
+      // Event callback
+      if (body.event?.type === "app_mention") {
+        const text = body.event.text?.replace(/<@[^>]+>/, "").trim() || "";
+        if (!text) return res.json({ ok: true });
+        const config = loadGatewayConfig();
+        const result = await callAgent(config.api1, [{ role: "user", content: text }], {});
+        const reply = result.answer || "抱歉";
+        // 回复到同一频道
+        await axios.post("https://slack.com/api/chat.postMessage", {
+          channel: body.event.channel,
+          text: reply.slice(0, 3000),
+        }, { headers: { Authorization: `Bearer ${req.params.token}`, "Content-Type": "application/json" } }).catch(() => {});
+      }
+      // Direct message
+      if (body.event?.type === "message" && body.event.channel_type === "im" && !body.event.bot_id) {
+        const text = body.event.text || "";
+        if (!text) return res.json({ ok: true });
+        const config = loadGatewayConfig();
+        const result = await callAgent(config.api1, [{ role: "user", content: text }], {});
+        const reply = result.answer || "抱歉";
+        await axios.post("https://slack.com/api/chat.postMessage", {
+          channel: body.event.channel,
+          text: reply.slice(0, 3000),
+        }, { headers: { Authorization: `Bearer ${req.params.token}`, "Content-Type": "application/json" } }).catch(() => {});
+      }
+      res.json({ ok: true });
+    } catch(e) {
+      res.json({ ok: false, error: e.message });
+    }
+  });
+
+  // 钉钉 Outgoing Webhook
+  router.post("/gateway/dingtalk/:token", async (req, res) => {
+    try {
+      const body = req.body || {};
+      // 钉钉 Outgoing 格式
+      const text = body.text?.content || body.text || "";
+      const sender = body.senderNick || body.senderId || "";
+      if (!text || text.trim() === "/memi") return res.json({ msgtype: "text", text: { content: "你好！我是 Memi。请在你的消息中 @我 并输入你想问的内容。" } });
+
+      const config = loadGatewayConfig();
+      const result = await callAgent(config.api1, [{ role: "user", content: text }], {});
+      const reply = result.answer || "抱歉";
+
+      // 钉钉回复格式
+      res.json({
+        msgtype: "markdown",
+        markdown: { title: "Memi", text: reply.slice(0, 5000) },
+        at: { atUserIds: [sender] },
+      });
+    } catch(e) {
+      res.json({ msgtype: "text", text: { content: "错误: " + e.message } });
     }
   });
 

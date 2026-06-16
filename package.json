@@ -20,6 +20,9 @@
     "memi-server/utils/importSkill.js",
     "memi-server/utils/vectorStore.js",
     "memi-server/utils/browser.js",
+    "memi-server/utils/voice.js",
+    "memi-server/utils/mcp.js",
+    "memi-server/utils/sandbox.js",
     "memi-client/dist/",
     "memi-config/workspace/"
   ],

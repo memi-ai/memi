@@ -1824,8 +1824,52 @@ const cmd = process.argv[2] || "chat";
       log(`  ${A.ck}cron${A.r}     ${_("cron")}      ${A.ck}update${A.r}   ${_("update")}`);
       log(`  ${A.ck}version${A.r}  ${_("version")}    ${A.ck}help${A.r}     ${_("help")}`);
       log(`  ${A.ck}lang${A.r}     Language   ${A.g}memi lang zh|en${A.r}`);
+      log(`  ${A.ck}expose${A.r}   Network    ${A.g}memi expose lan|public|off${A.r}`);
       log("");
       break;
+    case "expose": {
+      const sub = process.argv[3] || "status";
+      if (sub === "lan" || sub === "public") {
+        const cfg = loadCfg();
+        cfg.expose = sub;
+        saveCfg(cfg);
+        ok(`网络暴露模式: ${sub === "lan" ? "局域网" : "公网"}`);
+        if (sub === "lan") {
+          const os = require("os");
+          const nets = os.networkInterfaces();
+          log(A.b + "\n  局域网访问地址:\n" + A.r);
+          Object.values(nets).forEach(iface => {
+            (iface || []).forEach(addr => {
+              if (addr.family === "IPv4" && !addr.internal) {
+                log(`  http://${addr.address}:3001/dashboard`);
+              }
+            });
+          });
+        }
+        if (sub === "public") {
+          log(A.yk + "\n  ⚠️ 安全警告: 公网暴露有风险！\n" + A.r);
+          log(A.yk + "  建议: 设置 MEMI_GATEWAY_TOKEN 环境变量\n" + A.r);
+          log(A.yk + "  建议: 使用 nginx/caddy 反代 + HTTPS\n" + A.r);
+        }
+        log(A.g + "\n  重启服务生效: memi server restart\n" + A.r);
+      } else if (sub === "off") {
+        const cfg = loadCfg();
+        cfg.expose = "off";
+        saveCfg(cfg);
+        ok("已关闭网络暴露，恢复 localhost only");
+        log(A.g + "  重启服务生效: memi server restart\n" + A.r);
+      } else {
+        const cfg = loadCfg();
+        const mode = cfg.expose || "off";
+        log(A.b + "\n  网络暴露状态\n" + A.r);
+        log(`  模式: ${mode === "off" ? "仅本机" : mode === "lan" ? "局域网" : "公网"}`);
+        log(`  Dashboard: http://localhost:3001/dashboard`);
+        log(A.g + "\n  memi expose lan      局域网可访问\n" + A.r);
+        log(A.g + "  memi expose public   公网可访问 (危险!)\n" + A.r);
+        log(A.g + "  memi expose off      关闭暴露\n" + A.r);
+      }
+      break;
+    }
     case "lang": {
       const la = process.argv[3];
       if (la === "zh" || la === "en") { setLang(la); ok("Language → " + (la==="zh"?"中文":"English")); }

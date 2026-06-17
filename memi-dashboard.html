@@ -428,6 +428,31 @@ let mediaRecorder=null,audioChunks=[],isRecording=false;
 let voiceReadEnabled=localStorage.getItem("memi-voice-read")==="true";
 if(voiceReadEnabled)document.getElementById("voiceToggle").classList.add("active");
 
+// 浏览器原生语音识别（Chrome 免费，无需 API）
+async function browserSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("浏览器不支持语音识别，请使用 Chrome 或 Edge");return}
+  const recognition=new SR();
+  recognition.lang=lang==="en"?"en-US":"zh-CN";
+  recognition.interimResults=false;
+  recognition.onresult=e=>{
+    document.getElementById("inp").value=e.results[0][0].transcript;
+    document.getElementById("inp").placeholder=t("placeholder");
+    send();
+  };
+  recognition.onerror=e=>{
+    if(e.error!=="aborted")document.getElementById("inp").placeholder="语音错误: "+e.error;
+  };
+  recognition.start();
+  document.getElementById("micBtn").textContent="⏺";
+  document.getElementById("micBtn").classList.add("recording");
+  setTimeout(()=>{
+    recognition.stop();
+    document.getElementById("micBtn").textContent="🎤";
+    document.getElementById("micBtn").classList.remove("recording");
+  },10000);
+}
+
 async function toggleMic(){
   if(isRecording){stopRecording();return}
   // 优先用浏览器原生语音识别（免费，无需 API）
@@ -462,31 +487,6 @@ async function toggleMic(){
       };
       reader.readAsDataURL(blob);
     };
-
-    // 浏览器原生语音识别（Chrome 免费，无需 API）
-    async function browserSpeech(){
-      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-      if(!SR){alert("浏览器不支持语音识别，请使用 Chrome 或 Edge");return}
-      const recognition=new SR();
-      recognition.lang=lang==="en"?"en-US":"zh-CN";
-      recognition.interimResults=false;
-      recognition.onresult=e=>{
-        document.getElementById("inp").value=e.results[0][0].transcript;
-        document.getElementById("inp").placeholder=t("placeholder");
-        send();
-      };
-      recognition.onerror=e=>{
-        if(e.error!=="aborted")document.getElementById("inp").placeholder="语音错误: "+e.error;
-      };
-      recognition.start();
-      document.getElementById("micBtn").textContent="⏺";
-      document.getElementById("micBtn").classList.add("recording");
-      setTimeout(()=>{
-        recognition.stop();
-        document.getElementById("micBtn").textContent="🎤";
-        document.getElementById("micBtn").classList.remove("recording");
-      },10000);
-    }
     mediaRecorder.start();
     isRecording=true;
     document.getElementById("micBtn").classList.add("recording");

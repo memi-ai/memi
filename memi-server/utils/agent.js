@@ -69,85 +69,14 @@ const TOOLS = [
       required: ["query"],
     },
     handler: async (args) => {
-      // 天气查询直接用 wttr.in
-      const q = (args.query || "").toLowerCase();
-      // 天气走 wttr.in（直接用拼音更准）
-      if (q.includes("天气") || q.includes("weather")) {
-        const cityMap = { "北京":"Beijing", "上海":"Shanghai", "广州":"Guangzhou", "深圳":"Shenzhen", "杭州":"Hangzhou", "成都":"Chengdu", "武汉":"Wuhan", "南京":"Nanjing", "南昌":"Nanchang", "长沙":"Changsha", "重庆":"Chongqing", "西安":"Xian" };
-        try {
-          let city = args.query.replace(/天气|weather|forecast|查询|最近|三天|未来|今天|明天|预报|site:|tianqi\.com|的|\d+/g, "").trim();
-          // 中文城市名映射
-          for (const [cn, en] of Object.entries(cityMap)) { if (city.includes(cn)) { city = en; break; } }
-          if (/[\u4e00-\u9fff]/.test(city)) city = "Nanchang"; // 未识别中文兜底
-          const r = await axios.get(`https://wttr.in/${encodeURIComponent(city)}?format=j1&lang=zh`, { timeout: 10000 });
-          const d = r.data;
-          if (d && d.current_condition) {
-            const w = d.current_condition[0];
-            const days = (d.weather || []).slice(0, 3).map((dy) => {
-              return `${dy.date}: ${dy.hourly?.[4]?.lang_zh?.[0]?.value || "?"} ${dy.mintempC}~${dy.maxtempC}°C`;
-            }).join("\n");
-            return `城市: ${d.nearest_area?.[0]?.areaName?.[0]?.value || "?"}\n` +
-              `当前: ${w.lang_zh?.[0]?.value || "?"} ${w.temp_C}°C, 湿度${w.humidity}%\n` +
-              `未来3天:\n${days}`;
-          }
-        } catch {}
-        // fallback: 简单格式
-        try {
-          const city = q.replace(/天气|weather|forecast|查询|最近|三天|未来|今天|明天/g, "").trim() || args.query;
-          const r = await axios.get(`https://wttr.in/${encodeURIComponent(city)}?format=4&m&lang=zh`, { timeout: 10000 });
-          if (r.data && !r.data.includes("<!DOCTYPE")) return "天气: " + r.data.trim();
-        } catch {}
+      try {
+        const { search } = require("./search");
+        return await search(args.query, args.maxResults || 5);
+      } catch (e) {
+        return "搜索失败: " + e.message;
       }
-
-      const engines = [
-        async () => {
-          const eq = encodeURIComponent(args.query || "");
-          const r = await axios.get(`https://html.duckduckgo.com/html/?q=${eq}`, {
-            headers: { "User-Agent": "Mozilla/5.0 (compatible; MemiAgent/1.0)" },
-            timeout: 8000,
-          });
-          const snRe = /<a rel="nofollow" class="result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
-          const tiRe = /<a rel="nofollow" class="result__a"[^>]*>([\s\S]*?)<\/a>/gi;
-          const html = r.data;
-          const sn = [...html.matchAll(snRe)], ti = [...html.matchAll(tiRe)];
-          const results = [];
-          const count = Math.min(Math.max(parseInt(args.maxResults) || 5, 1), 10);
-          for (let i = 0; i < Math.min(count, ti.length); i++) {
-            const title = (ti[i]?.[1] || "").replace(/<[^>]*>/g, "").trim();
-            const snippet = (sn[i]?.[1] || "").replace(/<[^>]*>/g, "").trim();
-            if (title) results.push(`${i + 1}. ${title}\n   ${snippet}`);
-          }
-          if (results.length > 0) return results.join("\n\n");
-          throw new Error("no results");
-        },
-        async () => {
-          const eq = encodeURIComponent(args.query || "");
-          const r = await axios.get(`https://www.bing.com/search?q=${eq}`, {
-            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-            timeout: 15000,
-          });
-          const html = r.data;
-          const results = [];
-          // 宽松匹配中文标题和描述
-          const blockRe = /<h2[^>]*><a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a><\/h2>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/gi;
-          let m;
-          const count = Math.min(Math.max(parseInt(args.maxResults) || 5, 1), 10);
-          while ((m = blockRe.exec(html)) !== null && results.length < count) {
-            const title = m[2].replace(/<[^>]*>/g, "").trim();
-            const snippet = m[3].replace(/<[^>]*>/g, "").trim();
-            if (title) results.push(`${results.length + 1}. ${title}\n   ${snippet}`);
-          }
-          if (results.length > 0) return results.join("\n\n");
-          throw new Error("no results");
-        },
-      ];
-
-      for (const engine of engines) {
-        try { return await engine(); }
-        catch { continue; }
-      }
-      return `未找到 "${args.query}" 的搜索结果（DuckDuckGo 和 Bing 均超时）`;
     },
+
   },
   {
     name: "run_skill",

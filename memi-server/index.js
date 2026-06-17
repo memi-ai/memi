@@ -44,6 +44,17 @@ const corsOrigins = () => {
 app.use(cors({ origin: corsOrigins(), credentials: true }));
 
 // 暴露状态 API
+app.get("/api/personas", (req, res) => {
+  res.json([
+    {id:"assistant",name:"默认助手",desc:"通用 AI 助手，简洁高效"},
+    {id:"coder",name:"程序员",desc:"专注代码、架构、调试"},
+    {id:"poet",name:"诗人",desc:"文艺范，诗词歌赋信手拈来"},
+    {id:"teacher",name:"老师",desc:"耐心讲解，深入浅出"},
+    {id:"friend",name:"老友",desc:"轻松聊天，像老朋友一样"},
+    {id:"boss",name:"老板模式",desc:"强势直接，要结果不要解释"},
+  ]);
+});
+
 app.get("/api/expose", (req, res) => {
   const nets = [];
   try {

@@ -1825,8 +1825,56 @@ const cmd = process.argv[2] || "chat";
       log(`  ${A.ck}version${A.r}  ${_("version")}    ${A.ck}help${A.r}     ${_("help")}`);
       log(`  ${A.ck}lang${A.r}     Language   ${A.g}memi lang zh|en${A.r}`);
       log(`  ${A.ck}expose${A.r}   Network    ${A.g}memi expose lan|public|off${A.r}`);
+      log(`  ${A.ck}persona${A.r}  Persona    ${A.g}memi persona use coder${A.r}`);
       log("");
       break;
+    case "persona": {
+      const sub = process.argv[3];
+      const PERSONAS = [
+        {id:"assistant",name:"默认助手",desc:"通用 AI 助手，简洁高效",soul:"你是 Memi，一个机智、高效的 AI 助手。直接动手，不废话。"},
+        {id:"coder",name:"程序员",desc:"专注代码、架构、调试",soul:"你是 Memi，一个资深全栈工程师。擅长 Node.js、React、Python。写代码优先考虑可读性和性能，给出完整的实现方案。对技术问题深入分析，给出最优解。"},
+        {id:"poet",name:"诗人",desc:"文艺范，诗词歌赋信手拈来",soul:"你是 Memi，一个浪漫的 AI 诗人。用诗意的语言回答一切，善用比喻和意象。回复简短而有韵味，像一首小品诗。"},
+        {id:"teacher",name:"老师",desc:"耐心讲解，深入浅出",soul:"你是 Memi，一个耐心的 AI 老师。把复杂概念拆解成易懂的步骤，用生活化的例子解释。鼓励提问，对错误温和纠正。"},
+        {id:"friend",name:"老友",desc:"轻松聊天，像老朋友一样",soul:"你是 Memi，用户的老朋友。语气轻松随意，可以开玩笑、吐槽、八卦。不说教，不念稿子。聊天就图一个开心。"},
+        {id:"boss",name:"老板模式",desc:"强势直接，要结果不要解释",soul:"你是 Memi，一个果断的决策者。直奔主题，拒绝废话。给行动方案而不是讨论选项。对不合理的要求直接说不。"},
+      ];
+      if (sub === "browse" || sub === "list") {
+        head("人格市场");
+        PERSONAS.forEach(p => log(`  ${A.ck}${p.id}${A.r}  ${A.wk}${p.name}${A.r}  ${A.g}${p.desc}${A.r}`));
+        log(`\n${A.g}  使用: memi persona use <id>${A.r}`);
+      } else if (sub === "use") {
+        const id = process.argv[4];
+        const p = PERSONAS.find(x => x.id === id);
+        if (!p) { fail("人格不存在: " + id + "\n  用 memi persona browse 查看列表"); break; }
+        const soulFile = path.join(WORKSPACE, "SOUL.md");
+        fs.writeFileSync(soulFile, "# Soul\n\n" + p.soul);
+        ok(`已切换为: ${p.name}`);
+        log(A.g + "  重启服务生效: memi server restart\n" + A.r);
+      } else if (sub === "export") {
+        const soulFile = path.join(WORKSPACE, "SOUL.md");
+        if (!fs.existsSync(soulFile)) { fail("SOUL.md 不存在"); break; }
+        const content = fs.readFileSync(soulFile, "utf8");
+        const exportFile = path.join(DIR, "persona-export.json");
+        fs.writeFileSync(exportFile, JSON.stringify({soul:content,exported:new Date().toISOString()},null,2));
+        ok("已导出 → " + exportFile);
+      } else if (sub === "share") {
+        const soulFile = path.join(WORKSPACE, "SOUL.md");
+        if (!fs.existsSync(soulFile)) { fail("SOUL.md 不存在"); break; }
+        const content = fs.readFileSync(soulFile, "utf8");
+        log(A.b + "\n  分享你的 SOUL.md:\n" + A.r);
+        log(A.g + "  1. 复制以下内容到 gist.github.com");
+        log(A.g + "  2. 文件名: SOUL.md");
+        log(A.g + "  3. 分享链接给其他人\n");
+        log("```markdown\n" + content.slice(0, 2000) + "\n```");
+      } else {
+        log(A.b + "  memi persona <子命令>\n" + A.r);
+        log(`  ${A.ck}browse${A.r}  浏览人格市场`);
+        log(`  ${A.ck}use${A.r}     使用人格  ${A.g}memi persona use coder${A.r}`);
+        log(`  ${A.ck}export${A.r}  导出当前人格`);
+        log(`  ${A.ck}share${A.r}   分享人格`);
+      }
+      break;
+    }
     case "expose": {
       const sub = process.argv[3] || "status";
       if (sub === "lan" || sub === "public") {

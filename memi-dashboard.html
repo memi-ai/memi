@@ -8,6 +8,11 @@
 <title>Memi Agent</title>
 <style>
 :root{--bg:#f5f5f5;--panel:#fff;--border:#e5e7eb;--text:#1a1a1a;--dim:#9ca3af;--accent:#111827;--green:#059669;--red:#dc2626;--yellow:#d97706}
+[data-theme="warm"]{--bg:#fdf6f0;--panel:#fffaf5;--border:#e8d5c4;--text:#3d2b1f;--dim:#b08968;--accent:#c17a3e;--green:#7c9a5e;--red:#c4665a;--yellow:#c9983a}
+[data-theme="forest"]{--bg:#f0f5f1;--panel:#fafcfa;--border:#c5d8c5;--text:#1a2e1a;--dim:#7a9a7a;--accent:#3a6b3a;--green:#4a8c4a;--red:#b55a4a;--yellow:#a08030}
+[data-theme="ocean"]{--bg:#f0f4f8;--panel:#fafcfe;--border:#c5d0e0;--text:#1a2436;--dim:#7a8ca8;--accent:#3a5a8c;--green:#4a7a6a;--red:#b55a5a;--yellow:#a09040}
+[data-theme="dusk"]{--bg:#f3f0f8;--panel:#faf8fd;--border:#d0c5e0;--text:#2a1a3e;--dim:#9a7aaa;--accent:#6a4a9a;--green:#5a8a6a;--red:#b55a6a;--yellow:#a09050}
+[data-theme="rose"]{--bg:#fdf5f5;--panel:#fffafa;--border:#e8c5c8;--text:#3d1a1f;--dim:#b07a80;--accent:#b84a5a;--green:#6a8a5a;--red:#c44a4a;--yellow:#b09040}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex}
 /* sidebar */
@@ -99,6 +104,7 @@ body.clean #cleanBtn{border-color:var(--accent);color:var(--accent)}
     <button class="toggle" onclick="toggleSidebar()" title="侧边栏">☰</button>
     <span class="dot" id="dot"></span>
     <span id="st" style="font-size:12px;color:var(--dim)">就绪</span>
+    <button id="themeToggle" onclick="cycleTheme()" style="margin-right:4px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" title="切换主题">🎨</button>
     <button id="langToggle" onclick="toggleLang()" style="margin-right:4px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" title="Switch language">中</button>
     <button onclick="toggleClean()" id="cleanBtn" style="margin-left:4px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer" title="纯净模式">
   <svg id="cleanIconExpand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -366,6 +372,18 @@ inp.addEventListener("input",function(){this.style.height="42px";this.style.heig
 inp.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();confirmSend(inp.value.trim(),send)}});
 document.addEventListener("keydown",function(e){if(e.ctrlKey&&e.key==="n"){e.preventDefault();newChat()}});
 window.addEventListener("beforeunload",()=>{if(messages.length>0)saveCurrentSession()});
+
+// ─── 主题切换 ──────────────────────────────────────────
+const themes=["light","warm","forest","ocean","dusk","rose"];
+const themeNames={light:"默认",warm:"暖阳",forest:"森林",ocean:"海洋",dusk:"薄暮",rose:"蔷薇"};
+let currentTheme=localStorage.getItem("memi-theme")||"light";
+document.documentElement.setAttribute("data-theme",currentTheme);
+function cycleTheme(){
+  const idx=themes.indexOf(currentTheme);
+  currentTheme=themes[(idx+1)%themes.length];
+  document.documentElement.setAttribute("data-theme",currentTheme);
+  localStorage.setItem("memi-theme",currentTheme);
+}
 
 // ─── i18n 国际化 ────────────────────────────────────────
 const I18N={

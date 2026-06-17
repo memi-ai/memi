@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="README.md">🇨🇳 中文</a> | <a href="README_EN.md">🇺🇸 English</a>
+</p>
+
+<p align="center">
   <a href="https://www.npmjs.com/package/memi-agent"><img src="https://img.shields.io/npm/v/memi-agent?style=for-the-badge&color=6366f1" alt="npm version"></a>
   <a href="https://github.com/memi-ai/memi/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-18+-green.svg?style=for-the-badge" alt="Node.js 18+"></a>

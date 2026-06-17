@@ -436,21 +436,29 @@ async function browserSpeech(){
   recognition.lang=lang==="en"?"en-US":"zh-CN";
   recognition.interimResults=false;
   recognition.onresult=e=>{
+    recognition.stop();
+    document.getElementById("micBtn").textContent="🎤";
+    document.getElementById("micBtn").classList.remove("recording");
     document.getElementById("inp").value=e.results[0][0].transcript;
     document.getElementById("inp").placeholder=t("placeholder");
     send();
   };
   recognition.onerror=e=>{
+    recognition.stop();
+    document.getElementById("micBtn").textContent="🎤";
+    document.getElementById("micBtn").classList.remove("recording");
     if(e.error!=="aborted")document.getElementById("inp").placeholder="语音错误: "+e.error;
+  };
+  recognition.onend=()=>{
+    document.getElementById("micBtn").textContent="🎤";
+    document.getElementById("micBtn").classList.remove("recording");
   };
   recognition.start();
   document.getElementById("micBtn").textContent="⏺";
   document.getElementById("micBtn").classList.add("recording");
   setTimeout(()=>{
-    recognition.stop();
-    document.getElementById("micBtn").textContent="🎤";
-    document.getElementById("micBtn").classList.remove("recording");
-  },10000);
+    try{recognition.stop()}catch{}
+  },15000);
 }
 
 async function toggleMic(){

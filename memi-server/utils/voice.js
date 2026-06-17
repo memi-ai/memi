@@ -22,19 +22,19 @@ async function transcribe(audioBase64, config) {
   const api = config.api1 || config;
   if (!api.apiKey) throw new Error("未配置 API Key");
 
-  // 优先使用 OpenAI 官方 Whisper API
-  // 也兼容 DeepSeek / 通义千问 等代理
   let endpoint = "https://api.openai.com/v1";
   if (api.baseUrl) {
     endpoint = api.baseUrl.replace(/\/$/, "");
   }
 
-  try {
-    // 将 base64 转为 Buffer 并发送 multipart
-    const audioBuffer = Buffer.from(audioBase64, "base64");
+  // 检查 form-data 是否可用
+  let FormData;
+  try { FormData = require("form-data"); } catch {
+    throw new Error("缺少依赖: npm install form-data --prefix memi-server");
+  }
 
-    // 尝试用 multipart 格式调用 /audio/transcriptions
-    const FormData = require("form-data");
+  try {
+    const audioBuffer = Buffer.from(audioBase64, "base64");
     const form = new FormData();
     form.append("file", audioBuffer, {
       filename: "recording.webm",
@@ -47,20 +47,23 @@ async function transcribe(audioBase64, config) {
       `${endpoint}/audio/transcriptions`,
       form,
       {
-        headers: {
-          Authorization: `Bearer ${api.apiKey}`,
-          ...form.getHeaders(),
-        },
+        headers: { Authorization: `Bearer ${api.apiKey}`, ...form.getHeaders() },
         timeout: 30000,
       }
     );
     return resp.data?.text || "";
   } catch (e) {
-    // 回退: 如果 Whisper 不可用, 返回提示
     if (e.response?.status === 404) {
-      throw new Error("当前 API 不支持 Whisper 语音转文字。请使用 OpenAI API Key 或支持 /audio/transcriptions 的端点。");
+      throw new Error(
+        "当前 API 不支持 Whisper 语音转文字。\n" +
+        "解决: 在 config.json 中把 api1.baseUrl 改为 https://api.openai.com/v1\n" +
+        "或使用 Dashboard 的浏览器语音识别 (无需 API)"
+      );
     }
-    throw new Error("语音转文字失败: " + (e.response?.data?.error?.message || e.message));
+    if (e.response?.status === 401 || e.response?.status === 403) {
+      throw new Error("API Key 无效或没有 Whisper 权限。请使用 OpenAI API Key。");
+    }
+    throw new Error("转写失败: " + (e.response?.data?.error?.message || e.message));
   }
 }
 

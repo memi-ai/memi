@@ -430,6 +430,10 @@ if(voiceReadEnabled)document.getElementById("voiceToggle").classList.add("active
 
 async function toggleMic(){
   if(isRecording){stopRecording();return}
+  // 优先用浏览器原生语音识别（免费，无需 API）
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){await browserSpeech();return}
+  // 回退到 MediaRecorder + 服务器 Whisper
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder=new MediaRecorder(stream,{mimeType:"audio/webm"});
@@ -438,7 +442,6 @@ async function toggleMic(){
     mediaRecorder.onstop=async()=>{
       stream.getTracks().forEach(t=>t.stop());
       const blob=new Blob(audioChunks,{type:"audio/webm"});
-      // 优先服务器 Whisper API
       const reader=new FileReader();
       reader.onloadend=async()=>{
         const base64=reader.result.split(",")[1];
@@ -453,38 +456,36 @@ async function toggleMic(){
             send();
           }else{throw new Error(d.error||"")}
         }catch(e){
-          // 回退：浏览器内置语音识别
-          document.getElementById("inp").placeholder="浏览器语音识别中...";
-          try{await browserTranscribe(blob)}catch(e2){
-            document.getElementById("inp").placeholder=e2.message||e.message||"语音转写失败";
-          }
+          document.getElementById("inp").placeholder=(e.message||"转写失败").slice(0,50);
         }
         document.getElementById("micBtn").textContent="🎤";
       };
       reader.readAsDataURL(blob);
     };
 
-    // 浏览器 Web Speech API 回退
-    async function browserTranscribe(audioBlob){
+    // 浏览器原生语音识别（Chrome 免费，无需 API）
+    async function browserSpeech(){
       const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-      if(!SR)throw new Error("浏览器不支持语音识别，请使用 Chrome");
-      return new Promise((resolve,reject)=>{
-        const recognition=new SR();
-        recognition.lang=lang==="en"?"en-US":"zh-CN";
-        recognition.interimResults=false;
-        recognition.maxAlternatives=1;
-        recognition.onresult=e=>{
-          const text=e.results[0][0].transcript;
-          document.getElementById("inp").value=text;
-          document.getElementById("inp").placeholder=t("placeholder");
-          resolve(text);
-          send();
-        };
-        recognition.onerror=e=>reject(new Error("语音识别失败: "+e.error));
-        recognition.onnomatch=()=>reject(new Error("未识别到语音"));
-        recognition.start();
-        setTimeout(()=>{try{recognition.stop()}catch{}},10000);
-      });
+      if(!SR){alert("浏览器不支持语音识别，请使用 Chrome 或 Edge");return}
+      const recognition=new SR();
+      recognition.lang=lang==="en"?"en-US":"zh-CN";
+      recognition.interimResults=false;
+      recognition.onresult=e=>{
+        document.getElementById("inp").value=e.results[0][0].transcript;
+        document.getElementById("inp").placeholder=t("placeholder");
+        send();
+      };
+      recognition.onerror=e=>{
+        if(e.error!=="aborted")document.getElementById("inp").placeholder="语音错误: "+e.error;
+      };
+      recognition.start();
+      document.getElementById("micBtn").textContent="⏺";
+      document.getElementById("micBtn").classList.add("recording");
+      setTimeout(()=>{
+        recognition.stop();
+        document.getElementById("micBtn").textContent="🎤";
+        document.getElementById("micBtn").classList.remove("recording");
+      },10000);
     }
     mediaRecorder.start();
     isRecording=true;

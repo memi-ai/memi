@@ -34,6 +34,12 @@ memi onboard
 
 # 或者一行搞定（无需安装）
 npx memi-agent onboard
+
+# macOS / Linux 一键脚本
+curl -fsSL https://raw.githubusercontent.com/memi-ai/memi/main/install.sh | bash
+
+# Windows PowerShell 一键脚本
+irm https://raw.githubusercontent.com/memi-ai/memi/main/install.ps1 | iex
 ```
 
 `memi onboard` 会引导你完成模型配置、工作区初始化、渠道接入，**macOS / Linux / Windows** 都支持。

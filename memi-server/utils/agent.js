@@ -300,10 +300,19 @@ const TOOLS = [
   { name: "clipboard_write", description: "写入文本到系统剪贴板。text 是要写入的内容。",
     parameters: { type:"object", properties:{ text:{type:"string",description:"写入内容"} }, required:["text"] },
     handler: async (args) => {
-      try { const { execSync } = require("child_process");
-        const cmd = process.platform==="win32" ? `echo ${args.text} | clip` : process.platform==="darwin" ? `echo "${args.text}" | pbcopy` : `echo "${args.text}" | xclip -selection c`;
-        execSync(cmd,{timeout:5000,shell:true}); return "已写入剪贴板"; }
-      catch { return "写入剪贴板失败"; }
+      try {
+        const text = String(args.text || "").slice(0, 10000);
+        // 安全写入：用 spawn 传参，避免 shell 注入
+        const { spawnSync } = require("child_process");
+        if (process.platform === "win32") {
+          spawnSync("cmd", ["/c", "echo", text, "|", "clip"], { timeout: 5000, shell: false });
+        } else if (process.platform === "darwin") {
+          spawnSync("pbcopy", [], { input: text, timeout: 5000 });
+        } else {
+          spawnSync("xclip", ["-selection", "c"], { input: text, timeout: 5000 });
+        }
+        return "已写入剪贴板";
+      } catch { return "写入剪贴板失败"; }
     }
   },
   { name: "open_url", description: "在默认浏览器中打开 URL。url 是要打开的网址。",
@@ -354,32 +363,42 @@ const TOOLS = [
   { name: "notify", description: "发送系统桌面通知。title 是标题，message 是内容。",
     parameters: { type:"object", properties:{ title:{type:"string",description:"标题"}, message:{type:"string",description:"内容"} }, required:["title","message"] },
     handler: async (args) => {
-      try { const { execSync } = require("child_process");
-        if (process.platform==="win32") {
-          const ps = `[Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime] > $null; $t='<toast><visual><binding template="ToastText02"><text id="1">${args.title}</text><text id="2">${args.message}</text></binding></visual></toast>'; [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Memi').Show((New-Object Windows.Data.Xml.Dom.XmlDocument)).LoadXml($t))`;
-          execSync(`powershell -command "${ps}"`,{timeout:5000,shell:true});
-        } else if (process.platform==="darwin") {
-          execSync(`osascript -e 'display notification "${args.message}" with title "${args.title}"'`,{timeout:5000,shell:true});
+      try {
+        const title = String(args.title || "").slice(0, 200).replace(/['"`$\\]/g, "");
+        const msg = String(args.message || "").slice(0, 500).replace(/['"`$\\]/g, "");
+        const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          execSync(`powershell -command "New-BurntToastNotification -Text '${title}','${msg}'"`, { timeout: 5000, shell: true });
+        } else if (process.platform === "darwin") {
+          const { spawnSync } = require("child_process");
+          spawnSync("osascript", ["-e", `display notification "${msg}" with title "${title}"`], { timeout: 5000 });
         } else {
-          execSync(`notify-send "${args.title}" "${args.message}"`,{timeout:5000,shell:true});
+          execSync(`notify-send '${title}' '${msg}'`, { timeout: 5000, shell: true });
         }
-        return "已发送通知"; }
-      catch { return "通知发送失败"; }
+        return "已发送通知";
+      } catch { return "通知发送失败"; }
     }
   },
   { name: "git_status", description: "查看 git 仓库状态。dir 是仓库目录（默认当前目录）。",
     parameters: { type:"object", properties:{ dir:{type:"string"} }, required:[] },
     handler: async (args) => {
-      try { const { execSync } = require("child_process"); const d = args.dir || ".";
-        return execSync(`git -C "${d}" status --short`,{timeout:10000,encoding:"utf8"}).slice(0,2000)||"(clean)"; }
+      try {
+        const { execSync } = require("child_process");
+        const d = String(args.dir || ".").replace(/[^a-zA-Z0-9_\-\.\/\\: ]/g, "");
+        return execSync(`git -C "${d}" status --short`,{timeout:10000,encoding:"utf8"}).slice(0,2000)||"(clean)";
+      }
       catch { return "不是git仓库或git未安装"; }
     }
   },
   { name: "git_log", description: "查看 git 提交历史。dir 是仓库目录，n 是显示条数（默认10）。",
     parameters: { type:"object", properties:{ dir:{type:"string"}, n:{type:"number"} }, required:[] },
     handler: async (args) => {
-      try { const { execSync } = require("child_process"); const d = args.dir || "."; const n = args.n || 10;
-        return execSync(`git -C "${d}" log --oneline -${n}`,{timeout:10000,encoding:"utf8"}).slice(0,2000); }
+      try {
+        const { execSync } = require("child_process");
+        const d = String(args.dir || ".").replace(/[^a-zA-Z0-9_\-\.\/\\: ]/g, "");
+        const n = Math.min(Math.max(parseInt(args.n) || 10, 1), 100);
+        return execSync(`git -C "${d}" log --oneline -${n}`,{timeout:10000,encoding:"utf8"}).slice(0,2000);
+      }
       catch { return "无法获取git日志"; }
     }
   },

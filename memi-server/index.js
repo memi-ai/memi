@@ -213,6 +213,7 @@ app.post("/api/mcp", async (req, res) => {
         const { TOOLS } = require("./utils/agent");
         const tool = TOOLS.find(t => t.name === name);
         if (!tool) return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: `Tool not found: ${name}` } });
+        if (!tool.handler) return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: `Tool "${name}" 需要运行时注入，MCP 模式下暂不可用` }] } });
         try {
           const result = await tool.handler(args || {});
           const text = typeof result === "string" ? result : JSON.stringify(result);

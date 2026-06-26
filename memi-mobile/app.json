@@ -6,19 +6,37 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#f5f5f5",
     "splash": {
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#111827",
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.memi.mobile"
+      "bundleIdentifier": "com.memiai.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Memi 需要麦克风权限进行语音输入"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#6366f1"
+        "backgroundColor": "#111827",
+        "foregroundImage": "./assets/icon.png"
       },
-      "package": "com.memi.mobile"
+      "package": "com.memiai.mobile",
+      "versionCode": 1,
+      "permissions": ["RECORD_AUDIO", "INTERNET"]
     },
-    "plugins": ["expo-speech"]
+    "plugins": [
+      "expo-speech",
+      [
+        "expo-av",
+        { "microphonePermission": "Memi 需要麦克风权限进行语音输入" }
+      ]
+    ],
+    "extra": {
+      "eas": { "projectId": "your-project-id" }
+    }
   }
 }

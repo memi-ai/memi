@@ -911,6 +911,56 @@ const TOOLS = [
     },
   },
   {
+    name: "email_send",
+    description: "发送邮件。to 是收件人地址，subject 是主题，body 是正文。使用 Memi 专属邮箱 memiai@agent.qq.com 发送。",
+    parameters: {
+      type: "object",
+      properties: {
+        to: { type: "string", description: "收件人邮箱" },
+        subject: { type: "string", description: "邮件主题" },
+        body: { type: "string", description: "邮件正文" },
+      },
+      required: ["to", "subject", "body"],
+    },
+    handler: async (args) => {
+      try {
+        const { execSync } = require("child_process");
+        const tmpFile = require("path").join(require("os").tmpdir(), `memi-mail-${Date.now()}.md`);
+        require("fs").writeFileSync(tmpFile, args.body || "");
+        const result = execSync(`agently-cli message +send --to "${args.to}" --subject "${args.subject}" --body-file "${tmpFile}"`, {
+          timeout: 15000, encoding: "utf8",
+        });
+        try { require("fs").unlinkSync(tmpFile); } catch {}
+        return result.slice(0, 1000) || "邮件已发送";
+      } catch (e) {
+        return "发送失败: " + e.message;
+      }
+    },
+  },
+  {
+    name: "email_check",
+    description: "检查收件箱，返回最近邮件列表。",
+    parameters: {
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "返回数量，默认5" },
+      },
+      required: [],
+    },
+    handler: async (args) => {
+      try {
+        const { execSync } = require("child_process");
+        const limit = Math.min(args.limit || 5, 20);
+        const result = execSync(`agently-cli message +list --limit ${limit}`, {
+          timeout: 15000, encoding: "utf8",
+        });
+        return result.slice(0, 3000) || "收件箱为空";
+      } catch (e) {
+        return "检查失败: " + e.message;
+      }
+    },
+  },
+  {
     name: "webhook_send",
     description: "向外部 webhook URL 发送 HTTP POST 请求。传入 url 和可选的 payload 数据。适用场景：触发外部自动化、通知第三方服务、集成 IFTTT/Zapier 等。",
     parameters: {

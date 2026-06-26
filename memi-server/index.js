@@ -311,6 +311,19 @@ server.listen(PORT, () => {
       const cfg = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, "utf8")) : { api1: {} };
       const result = await callAgent(cfg.api1, [{ role: "user", content: job.prompt }], {}, "high");
       console.log(`[Cron] "${job.name}" 结果:`, (result.answer || "").slice(0, 200));
+      if (cfg.notifyEmail && result.answer) {
+        try {
+          const { execSync } = require("child_process");
+          const tmpFile = path.join(__dirname, "..", "memi-config", "temp", "cron-mail.md");
+          const body = `## Memi Cron: ${job.name}\n\n${result.answer}`;
+          fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
+          fs.writeFileSync(tmpFile, body);
+          execSync(`agently-cli message +send --to "${cfg.notifyEmail}" --subject "[Memi] ${job.name}" --body-file "${tmpFile}"`, {
+            timeout: 15000, encoding: "utf8",
+          });
+          console.log(`[Cron] 邮件通知 → ${cfg.notifyEmail}`);
+        } catch (e) { console.warn("[Cron] 邮件通知失败:", e.message); }
+      }
     });
     console.log("[Cron] 定时任务调度已启动");
   } catch (e) { console.warn("[Cron] 启动失败:", e.message); }

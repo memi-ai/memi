@@ -290,8 +290,22 @@ wss.on("connection", (ws) => {
   handleWebSocket(ws, () => config);
 });
 
-server.listen(PORT, () => {
-  console.log(`memi-server is running on port ${PORT}`);
+// 根据 expose 模式决定绑定地址
+const bindAddr = exposeMode === "off" ? "127.0.0.1" : "0.0.0.0";
+server.listen(PORT, bindAddr, () => {
+  console.log(`memi-server is running on ${bindAddr}:${PORT}`);
+  if (exposeMode !== "off") {
+    try {
+      const nets = require("os").networkInterfaces();
+      Object.values(nets).forEach(iface => {
+        (iface || []).forEach(addr => {
+          if (addr.family === "IPv4" && !addr.internal) {
+            console.log(`  Dashboard: http://${addr.address}:${PORT}/dashboard`);
+          }
+        });
+      });
+    } catch {}
+  }
   console.log(`WebSocket: ws://localhost:${PORT}/api/gateway/ws`);
 
   // 自动索引工作区文档（异步，不阻塞启动）

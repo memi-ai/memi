@@ -84,9 +84,34 @@ body.clean #cleanBtn{border-color:var(--accent);color:var(--accent)}
 .tlog .tr{color:var(--dim);margin-top:1px}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+/* ─── 手机端响应式 ─── */
+@media(max-width:768px){
+  body{flex-direction:column}
+  .sidebar{position:fixed;left:-280px;top:0;bottom:0;z-index:50;width:280px;transition:left .25s}
+  .sidebar.open{left:0;box-shadow:0 0 40px rgba(0,0,0,.15)}
+  .main{flex:1;width:100%}
+  .monitor{display:none!important}
+  .header{padding:8px 12px}
+  .header .toggle{display:block;font-size:20px}
+  .header select{font-size:11px;padding:2px 4px}
+  #msgCount{display:none}
+  .msgs{padding:8px 12px}
+  .input-area{padding:8px 10px;gap:6px;position:sticky;bottom:0;background:#fff;z-index:10}
+  .input-area textarea{min-height:38px;font-size:14px}
+  .input-area button{padding:8px 12px;font-size:12px}
+  .msg{padding:8px 12px;font-size:13px;max-width:90%}
+  .msg.user{max-width:85%}
+  .msg.tool{padding:6px 10px;font-size:11px}
+  #cleanBtn,#thinkLevel{display:none}
+  .mic-btn{width:36px;height:36px;min-width:36px;font-size:16px!important}
+}
+/* 侧边栏遮罩 */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:49}
+@media(max-width:768px){.sidebar-overlay.show{display:block}}
 </style>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="sidebar" id="sidebar">
   <div class="head">
     <h1>Memi</h1>
@@ -146,7 +171,11 @@ let stats={totalTokens:0,totalCost:0,totalTools:0,totalMsgs:0};
 try{stats=JSON.parse(localStorage.getItem("memi-stats")||"{}")}catch{}
 function saveStats(){localStorage.setItem("memi-stats",JSON.stringify(stats))}
 
-function toggleSidebar(){document.getElementById("sidebar").classList.toggle("closed")}
+function toggleSidebar(){
+  const sb=document.getElementById("sidebar");
+  if(window.innerWidth<=768){sb.classList.toggle("open");document.getElementById("sidebarOverlay").classList.toggle("show")}
+  else{sb.classList.toggle("closed")}
+}
 function toggleClean(){
   const on = document.body.classList.toggle("clean");
   localStorage.setItem("memi-clean", on);

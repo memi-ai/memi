@@ -8,6 +8,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "memi-config-v3";
 const DISCOVERY_URL = "https://raw.githubusercontent.com/memi-ai/memi/main/memi-mobile/server.txt";
+const NGROK_HEADERS = { "ngrok-skip-browser-warning": "1" };
+
+// 封装 fetch，自动加 ngrok header
+async function apiFetch(url, options = {}) {
+  const headers = { ...NGROK_HEADERS, ...(options.headers || {}) };
+  return fetch(url, { ...options, headers });
+}
 
 export default function ChatScreen() {
   // ─── 状态 ──────────────────────────────────────────
@@ -58,7 +65,7 @@ export default function ChatScreen() {
 
     // 从 GitHub 读取最新 ngrok URL
     try {
-      const resp = await fetch(DISCOVERY_URL, { signal: AbortSignal.timeout(5000) });
+      const resp = await apiFetch(DISCOVERY_URL, { signal: AbortSignal.timeout(5000) });
       const url = (await resp.text()).trim();
       if (url.startsWith("http") && !urls.includes(url)) urls.push(url);
     } catch {}
@@ -71,7 +78,7 @@ export default function ChatScreen() {
     // 逐个尝试
     for (const url of urls) {
       try {
-        const resp = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
+        const resp = await apiFetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
         if (resp.ok) {
           setServerUrl(url);
           setConnected(true);
@@ -105,7 +112,7 @@ export default function ChatScreen() {
         content: String(m.text || ""),
       }));
 
-      const resp = await fetch(`${serverUrl}/api/v1/chat/completions`, {
+      const resp = await apiFetch(`${serverUrl}/api/v1/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "memi-agent", messages: apiMessages, stream: true }),
@@ -151,7 +158,7 @@ export default function ChatScreen() {
 
   const checkConnection = async (url) => {
     try {
-      const resp = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+      const resp = await fetch(`${url}/health`, { headers: NGROK_HEADERS, signal: AbortSignal.timeout(3000) });
       setConnected(resp.ok);
     } catch { setConnected(false); }
   };

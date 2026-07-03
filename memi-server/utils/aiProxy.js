@@ -1,6 +1,7 @@
 const axios = require("axios");
 const http = require("http");
 const https = require("https");
+const { detectProvider: detectRegProvider, loadBuiltinProviders } = require("../providers/registry");
 
 // ─── 厂商标识 ──────────────────────────────────────────────
 const PROVIDER = {
@@ -11,22 +12,28 @@ const PROVIDER = {
   POLLINATIONS: "pollinations",
 };
 
-// ─── 厂商探测：先按 baseUrl 关键词，再按模型名前缀兜底 ──
+// 加载 provider 插件
+loadBuiltinProviders();
+
+// ─── 厂商探测：先按 provider 注册表，再兜底 ──
 function detectProvider(baseUrl, model) {
   const url = (baseUrl || "").toLowerCase();
   const mdl = (model || "").toLowerCase();
 
-  if (url.includes("googleapis.com") || url.includes("generativelanguage")) return PROVIDER.GEMINI;
-  if (url.includes("anthropic.com")) return PROVIDER.ANTHROPIC;
+  const reg = detectRegProvider(baseUrl, model);
+  if (reg) {
+    if (reg.name === "gemini") return PROVIDER.GEMINI;
+    if (reg.name === "anthropic") return PROVIDER.ANTHROPIC;
+  }
+
   if (url.includes("nvidia.com") || url.includes("integrate.api.nvidia.com")) return PROVIDER.NVIDIA;
   if (url.includes("pollinations")) return PROVIDER.POLLINATIONS;
-  if (url.includes("openai.com")) return PROVIDER.OPENAI;
 
-  // 模型名兜底 — 适用于 baseUrl 是通用反向代理的场景
+  // 模型名兜底
   if (mdl.startsWith("gemini")) return PROVIDER.GEMINI;
   if (mdl.startsWith("claude")) return PROVIDER.ANTHROPIC;
 
-  return PROVIDER.OPENAI; // 默认 OpenAI 兼容
+  return PROVIDER.OPENAI;
 }
 
 // 普通文本和视觉模型请求超时，兼容 CPU 上较慢的本地 Ollama
@@ -499,8 +506,17 @@ async function callLLMAnthropic(baseUrl, apiKey, model, messages, extra) {
 
 async function callLLM(provider, messages, extra = {}) {
   const { baseUrl, apiKey, model } = provider;
-  const detected = detectProvider(baseUrl, model);
+  const reg = detectRegProvider(baseUrl, model);
 
+  if (reg && reg.name !== "openai") {
+    // 使用 provider 插件的原生实现（支持全部特有参数）
+    return reg.chat({ baseUrl, apiKey, model }, messages, {
+      maxTokens: extra.maxTokens || 0,
+      temperature: extra.temperature,
+    });
+  }
+
+  const detected = detectProvider(baseUrl, model);
   switch (detected) {
     case PROVIDER.GEMINI:
       return callLLMGemini(baseUrl, apiKey, model, messages, extra);

@@ -1,48 +1,27 @@
 {
-  "api1": {
-    "baseUrl": "https://api.deepseek.com/v1",
-    "apiKey": "sk-149c1dc25a2d40b8bebd654826f603a4",
-    "model": "deepseek-chat"
-  },
-  "api2": {
-    "baseUrl": "",
-    "apiKey": "",
-    "model": ""
-  },
-  "api3": {
-    "baseUrl": "",
-    "apiKey": "",
-    "model": ""
+  "models": {
+    "primary": {
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "model": "meta/llama-3.1-70b-instruct",
+      "apiKey": "sk-149c1dc25a2d40b8bebd654826f603a4"
+    },
+    "secondary": {},
+    "tertiary": {}
   },
   "agents": [
     {
-      "name": "默认",
-      "model": "deepseek-chat",
-      "systemPrompt": ""
-    },
-    {
-      "name": "聊天",
-      "model": "deepseek-chat",
+      "name": "default",
+      "model": "meta/llama-3.1-70b-instruct",
       "systemPrompt": ""
     }
   ],
-  "models": {
-    "primary": {
-      "baseUrl": "https://api.deepseek.com/v1",
-      "apiKey": "sk-149c1dc25a2d40b8bebd654826f603a4",
-      "model": "deepseek-chat"
-    },
-    "secondary": {
-      "baseUrl": "",
-      "apiKey": "",
-      "model": ""
-    },
-    "tertiary": {
-      "baseUrl": "",
-      "apiKey": "",
-      "model": ""
-    }
+  "api1": {
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
+    "model": "meta/llama-3.1-70b-instruct",
+    "apiKey": "sk-149c1dc25a2d40b8bebd654826f603a4"
   },
+  "api2": {},
+  "api3": {},
   "searchEngine": "auto",
   "gatewayPort": 3001
 }

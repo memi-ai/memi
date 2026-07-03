@@ -1145,7 +1145,7 @@ async function callAgent(provider, messages, runtimeTools = {}, thinkingLevel = 
   }).filter(Boolean);
 
   const toolMap = {};
-  activeTools.forEach((t) => { toolMap[t.name] = t.handler; });
+  activeTools.forEach((t) => { toolMap[t.name] = t.handler; });  // toolMap 保留全部工具，执行时不受限制
 
   const toolDesc = activeTools.map((t) =>
     `${t.name}(${(t.parameters?.required || []).join(", ")}): ${t.description}`
@@ -1186,7 +1186,11 @@ async function callAgent(provider, messages, runtimeTools = {}, thinkingLevel = 
       `- Use the user's language.`,
   };
 
-  const toolDefs = activeTools.map((t) => ({
+  // 限制工具数量（太多工具会导致 API 400）
+  const MAX_TOOLS = 30;
+  const limitedTools = activeTools.slice(0, MAX_TOOLS);
+
+  const toolDefs = limitedTools.map((t) => ({
     type: "function",
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }));

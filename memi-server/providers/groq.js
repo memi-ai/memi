@@ -1,6 +1,8 @@
 const axios = require("axios");
 
 const name = "groq";
+const defaultBaseUrl = "https://api.groq.com/openai/v1";
+const defaultModel = "llama-3.3-70b-versatile";
 
 function detect(baseUrl, model) {
   const b = (baseUrl || "").toLowerCase();
@@ -47,4 +49,4 @@ async function vision(provider, imageUrl, prompt, systemPrompt) {
   return resp.data.choices?.[0]?.message?.content || "";
 }
 
-module.exports = { name, detect, chat, vision };
+module.exports = { name, detect, chat, vision, defaultBaseUrl, defaultModel };

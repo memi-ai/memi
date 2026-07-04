@@ -1,10 +1,1 @@
-[
-  {
-    "role": "user",
-    "content": "你好"
-  },
-  {
-    "role": "assistant",
-    "content": "嗨！👋 我是 Memi，你的 AI 助手。\n\n有什么我能立刻帮你搞定的？开聊吧！"
-  }
-]
+[{"role":"user","content":"你好","type":"","args":"","result":""},{"role":"assistant","content":"嗨！👋 我是 Memi，你的 AI 助手。\n\n有什么我能立刻帮你搞定的？开聊吧！","type":"","args":"","result":""},{"role":"user","content":"帮我看一下我的电脑桌面","type":"","args":"","result":""}]

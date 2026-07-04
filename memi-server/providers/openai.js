@@ -1,15 +1,19 @@
 const axios = require("axios");
 
 const name = "openai";
+const defaultBaseUrl = "https://api.openai.com/v1";
+const defaultModel = "gpt-4o";
 
 function detect(baseUrl, model) {
-  return (
-    baseUrl.includes("openai.com") ||
-    baseUrl.includes(".openai.") ||
-    !baseUrl.includes("googleapis") && !baseUrl.includes("anthropic") &&
-    !baseUrl.includes("groq") && !baseUrl.includes("cohere") &&
-    !baseUrl.includes("pollinations")
-  );
+  const b = (baseUrl || "").toLowerCase();
+  const m = (model || "").toLowerCase();
+  if (b.includes("openai.com") || b.includes(".openai.")) return true;
+  // Not a match for any known non-OpenAI provider
+  const nonOpenAI = ["googleapis", "anthropic", "groq", "cohere", "pollinations", "perplexity", "nvidia", "cloudflare", "localhost", "127.0.0.1"];
+  for (const x of nonOpenAI) {
+    if (b.includes(x) || m.includes(x)) return false;
+  }
+  return true; // fallback: assume OpenAI-compatible
 }
 
 async function chat(provider, messages, options = {}) {
@@ -77,4 +81,4 @@ async function vision(provider, imageUrl, prompt, systemPrompt) {
   return resp.data.choices?.[0]?.message?.content || "";
 }
 
-module.exports = { name, detect, chat, chatStream, vision };
+module.exports = { name, detect, chat, chatStream, vision, defaultBaseUrl, defaultModel };

@@ -20,14 +20,20 @@ function listProviders() {
 function detectProvider(baseUrl, model) {
   const b = (baseUrl || "").toLowerCase();
   const m = (model || "").toLowerCase();
+  let fallback = null;
   for (const [name, provider] of providers) {
-    if (provider.detect && provider.detect(b, m)) return provider;
+    if (!provider.detect) continue;
+    if (provider.detect(b, m)) {
+      // If openai matches as fallback, remember it but keep looking
+      if (name === "openai") { fallback = provider; continue; }
+      return provider; // specific match wins immediately
+    }
   }
-  return providers.get("openai");
+  return fallback || providers.get("openai");
 }
 
 function loadBuiltinProviders() {
-  const builtins = ["openai", "gemini", "anthropic", "groq", "cohere"];
+  const builtins = ["openai", "gemini", "anthropic", "groq", "cohere", "perplexity", "nvidia", "cloudflare", "localai"];
   for (const name of builtins) {
     try {
       const mod = require(`./${name}`);

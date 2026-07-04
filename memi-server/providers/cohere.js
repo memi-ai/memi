@@ -1,6 +1,8 @@
 const axios = require("axios");
 
 const name = "cohere";
+const defaultBaseUrl = "https://api.cohere.ai/v1";
+const defaultModel = "command-r-plus";
 
 function detect(baseUrl, model) {
   const b = (baseUrl || "").toLowerCase();
@@ -34,4 +36,4 @@ async function chat(provider, messages, options = {}) {
   return resp.data.text || "";
 }
 
-module.exports = { name, detect, chat };
+module.exports = { name, detect, chat, defaultBaseUrl, defaultModel };

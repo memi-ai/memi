@@ -1,6 +1,8 @@
 const axios = require("axios");
 
 const name = "anthropic";
+const defaultBaseUrl = "https://api.anthropic.com/v1";
+const defaultModel = "claude-sonnet-4-20250514";
 
 function detect(baseUrl, model) {
   const b = (baseUrl || "").toLowerCase();
@@ -70,4 +72,4 @@ async function vision(provider, imageUrl, prompt, systemPrompt) {
   return resp.data.content?.[0]?.text || "";
 }
 
-module.exports = { name, detect, chat, vision };
+module.exports = { name, detect, chat, vision, defaultBaseUrl, defaultModel };

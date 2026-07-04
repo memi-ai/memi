@@ -1,6 +1,8 @@
 const axios = require("axios");
 
 const name = "gemini";
+const defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
+const defaultModel = "gemini-2.0-flash";
 
 function detect(baseUrl, model) {
   const b = (baseUrl || "").toLowerCase();
@@ -93,4 +95,4 @@ async function imageGen(provider, prompt, width, height) {
   return "";
 }
 
-module.exports = { name, detect, chat, vision, imageGen };
+module.exports = { name, detect, chat, vision, imageGen, defaultBaseUrl, defaultModel };

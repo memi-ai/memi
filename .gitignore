@@ -9,3 +9,7 @@ memi-config/memory-summaries.json
 memi-config/temp/
 memi-config/sandbox_tmp/
 *.tgz
+memi-config/backups/
+memi-config/cache/
+memi-config/logs/
+memi-config/.onboarded

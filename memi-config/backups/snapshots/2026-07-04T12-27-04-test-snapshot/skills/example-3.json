@@ -1,0 +1,6 @@
+{
+  "name": "周报生成",
+  "type": "llm",
+  "description": "从工作记录生成周报",
+  "promptTemplate": "根据以下工作记录生成周报: {input}"
+}

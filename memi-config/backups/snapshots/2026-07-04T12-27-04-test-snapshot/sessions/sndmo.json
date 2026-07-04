@@ -1,0 +1,62 @@
+[
+  {
+    "role": "user",
+    "content": "你好呀"
+  },
+  {
+    "role": "assistant",
+    "content": "嗨！👋 我是 Memi，你的全能 AI 助手。有什么需要帮忙的？直接说就行！"
+  },
+  {
+    "role": "user",
+    "content": "你能干啥"
+  },
+  {
+    "role": "assistant",
+    "content": "好问题。我有 57 个内置工具，基本啥都能干：\n\n📂 **文件操作** — 读、写、删、移、搜、压缩解压\n🌐 **网络** — 搜网页、下文件、查 IP、ping、DNS\n⚙️ **系统** — 看资源、运行命令、查进程、截屏\n🔐 **编码** — Base64/URL编解码、哈希、UUID、密码生成\n📊 **数据处理** — JSON格式化、CSV解析、文本统计、颜色转换\n🔧 **实用工具** — 天气、位置、二维码、计时器、提醒、剪贴板\n🗄️ **工作区** — 读写备忘录、搜索知识库、导入技能\n\n总之 — 写文件、跑脚本、查资料、算数、截图、设提醒... 你想让我做什么？"
+  },
+  {
+    "role": "user",
+    "content": "你试试给我电脑信息打个分"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "🖥 system_info",
+    "args": "",
+    "result": "OS: win32 10.0.26200\nCPU: 8 cores\nMemory: 8.2GB / 0.5GB free\nHostname: LAPTOP-8PDRATPC\nUptime: 236h"
+  },
+  {
+    "role": "assistant",
+    "content": "你这电脑配置一目了然：\n\n| 项目 | 详情 | 评分 |\n|------|------|:----:|\n| 💻 系统 | Windows 10.0.26200 | 🩶 |\n| 🧠 CPU | 8 核 | ⭐⭐⭐⭐ |\n| 💾 内存 | 8.2 GB（剩 0.5GB） | ⭐⭐ |\n| ⏱ 运行时间 | 236 小时（快10天了） | 稳如老狗 |\n| 🏢 型号 | LAPTOP-8PDRATPC（笔记本） | — |\n\n**总分：⭐⭐⭐☆☆（3/5）**\n\n主要短板是 **内存** — 8GB 只剩 0.5GB，明显跑满了，开几个 Chrome 标签页就喘不过气了。建议关掉些后台程序，或者加根内存条。CPU 8 核倒是还行。\n\n要我帮你看看是啥在吃内存？"
+  },
+  {
+    "role": "user",
+    "content": "要"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "⚡ run_command",
+    "args": "tasklist /sort /MEM /FO TABLE /NH | head -20",
+    "result": "命令执行失败: 'head' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "⚡ run_command",
+    "args": "tasklist /sort /MEM /FO TABLE /NH 2>nul | findstr /v \"^$\" | ",
+    "result": "\r\n"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "⚡ run_command",
+    "args": "powershell -Command \"Get-Process | Sort-Object WorkingSet64 ",
+    "result": "\r\nName               MB\r\n----               --\r\nTextInputHost     647\r\nmsedgewebview2    635\r\nchrome          249.3\r\nexplorer        228.8\r\nchrome          221.2\r\nchrome          211.9\r\nchrome          193.6\r\nchrome          186.8\r\nchrome          184.1\r\nchrome          170.9\r\nchrome          169.3\r\nchrome          168.3\r\nchrome          150.3\r\nchrome          144.3\r\nchrome          143.8\r\nchrome          143.3\r\nnode            118.8\r\nWindowsTerminal  98.7\r\ndwm              83.2\r\nmsedgewebview2 "
+  },
+  {
+    "role": "assistant",
+    "content": "一目了然 | 内存大胃王排行榜 🍔\n\n| # | 进程 | 吃内存 | \n|:-:|------|:-----:|\n| 🥇 | TextInputHost | **647 MB** |\n| 🥇 | msedgewebview2 | **635 MB** |\n| 🥉 | **Chrome × 一堆** | **合计 ~2.5 GB** |\n| 4 | 资源管理器 | 229 MB |\n| 5 | node | 119 MB |\n\n**分析报告：**\n\n🔴 **头号元凶：Chrome 家族** — 开了十几个 Chrome 进程，吃掉 **2.5G+**。加上 msedgewebview2（Edge 内核）又吞 635MB，浏览器全家桶占了快一半内存。\n\n🔴 **TextInputHost**（647MB）— 这是 Windows 输入法的进程，正常不该这么大，可能卡住了。\n\n**怎么办？**\n1. 关掉不用的 Chrome 标签页（尤其大网站）\n2. 重启一下电脑（236小时没关机了，该歇歇了）\n3. 或者我直接帮你杀掉最耗内存的进程？\n\n要我帮你清理一波吗？😏"
+  }
+]

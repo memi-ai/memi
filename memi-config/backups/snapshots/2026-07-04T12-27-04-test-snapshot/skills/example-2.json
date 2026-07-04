@@ -1,0 +1,6 @@
+{
+  "name": "代码审查",
+  "type": "llm",
+  "description": "审查代码并给出建议",
+  "promptTemplate": "Review this code and suggest improvements: {input}"
+}

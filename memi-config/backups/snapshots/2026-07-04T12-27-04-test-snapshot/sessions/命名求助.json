@@ -1,0 +1,62 @@
+[
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "role": "assistant",
+    "content": "你好！👋 我是 Memi，你的 AI 助手。\n\n有什么需要帮忙的吗？我可以帮你查找信息、操作文件、执行命令、搜索网页等等。尽管说！"
+  },
+  {
+    "role": "user",
+    "content": "你能干吗？"
+  },
+  {
+    "role": "assistant",
+    "content": "我能干的事情可多了，简单来说：\n\n**系统操作**\n- 📁 列出、读取、写入、移动、删除文件 / 文件夹\n- 🖥️ 执行任意命令（Python、Shell、Node 等）\n\n**信息获取**\n- 📍 查你的位置（IP 定位）\n- 🕐 查当前时间\n- 🌐 搜索网页\n- 🧮 计算数学\n\n**技能扩展**\n- 🔌 从 GitHub 导入技能\n\n简单说：**你说干啥，我直接干**，不用教我怎么操作。试试？"
+  },
+  {
+    "role": "user",
+    "content": "你和openclaw有什么区别？"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "🔍 web_search",
+    "args": "OpenClaw",
+    "result": "1. OpenClaw | 能干活的 AI 助手\n   2026年5月24日&ensp;&#0183;&ensp;OpenClaw 是 Peter Steinberger 开发的开源自主 AI 私人助理。 它运行在你自己的电脑上（Mac、Windows 或 Linux），能执行真实任务——管理文件、控制浏览器、发送消息，还能在 …\n\n2. OpenClaw - OpenClaw\n   OpenClaw 是一个 自托管 Gateway 网关，它把你常用的聊天应用和渠道界面（包括内置渠道，以及 Discord、Google Chat、iMessage、Matrix、Microsoft Teams、Signal、Slack、Telegram …\n\n3. OpenClaw完整安装教程与个人使用指南（2026最新版）\n   2026年4月4日&ensp;&#0183;&ensp;一、什么是 OpenClaw？ OpenClaw 是一个 本地优先、开源免费 的个人 AI Agent 运行框架，由奥地利开发者 Peter Steinberger 创建，基于 MIT 协议，2025 年 11 月正式上"
+  },
+  {
+    "role": "assistant",
+    "content": "原来 **OpenClaw** 也是一个 AI 助手。那我和它的区别，**实话实说**：\n\n| 对比项 | Memi（我） | OpenClaw |\n|--------|-----------|----------|\n| **性质** | 对话中的 AI Agent | 开源本地运行框架 |\n| **部署方式** | 无需安装，直接对话 | 需自行搭建、配置 |\n| **运行位置** | 云端 | 本地（你的电脑） |\n| **系统权限** | 当前会话内可直接操作文件/命令 | 完全本地控制 |\n| **扩展性** | 可导入技能 | 支持插件/Skills |\n| **开源** | ？ | ✅ 开源 (MIT) |\n\n**简单说：**\n- **我** 开箱即用，聊着天就能帮你干活\n- **OpenClaw** 是个自托管的框架，你要自己装，但数据全在本地，隐私性更强\n\n各有千秋，看你想要 **省事** 还是 **完全掌控** 了 🔧"
+  },
+  {
+    "role": "user",
+    "content": "明天天气帮我查一下"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "📍 get_location",
+    "args": "",
+    "result": "南昌, 江西, 中国"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "🕐 get_time",
+    "args": "",
+    "result": "2026/6/7 17:22:42"
+  },
+  {
+    "role": "assistant",
+    "type": "tool",
+    "content": "🔍 web_search",
+    "args": "南昌 2026年6月8日 天气预报, 5",
+    "result": "城市: Nanchangfu\n当前: Patchy rain nearby 30°C, 湿度63%\n未来3天:\n2026-06-07: Patchy rain nearby 23~30°C\n2026-06-08: Patchy rain nearby 17~22°C\n2026-06-09: Patchy rain nearby 16~19°C"
+  },
+  {
+    "role": "assistant",
+    "content": "**明天（6月8日，周一）南昌天气 ☁️🌦️**\n\n| 项目 | 内容 |\n|------|------|\n| 天气 | 局部有雨 |\n| 气温 | **17 ~ 22°C** |\n| 对比今天 | 明显降温（今天 23~30°C） |\n\n**建议：** 明天比今天冷了将近 8°C，出门记得 **带伞 + 加件外套** 🧥🌂"
+  }
+]

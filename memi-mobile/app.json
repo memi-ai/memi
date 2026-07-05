@@ -5,38 +5,35 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "backgroundColor": "#f5f5f5",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#ffffff",
     "splash": {
-      "backgroundColor": "#111827",
-      "resizeMode": "contain"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.memiai.mobile",
-      "buildNumber": "1",
-      "infoPlist": {
-        "NSMicrophoneUsageDescription": "Memi 需要麦克风权限进行语音输入"
-      }
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#111827",
+        "backgroundColor": "#171717",
         "foregroundImage": "./assets/icon.png"
       },
       "package": "com.memiai.mobile",
       "versionCode": 1,
-      "permissions": ["RECORD_AUDIO", "INTERNET"]
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "plugins": [
-      "expo-speech",
-      [
-        "expo-av",
-        { "microphonePermission": "Memi 需要麦克风权限进行语音输入" }
-      ]
+      "expo-status-bar"
     ],
     "extra": {
-      "eas": { "projectId": "your-project-id" }
-    }
+      "eas": {
+        "projectId": "b683215f-615e-4691-8c5c-88426e484b68"
+      }
+    },
+    "owner": "alexaal"
   }
 }

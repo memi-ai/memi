@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Memi</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fff;--bg2:#f7f7f8;--bg3:#ececf1;--text:#171717;--dim:#676767;--dim2:#8e8ea0;--border:#e5e5e5;--user:#171717;--user-t:#fff;--ai:#f7f7f8;--ai-t:#171717;--radius:18px}
+html,body,#root{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100%;height:100dvh}
+/* header */
+.header{display:flex;align-items:center;justify-content:center;padding:12px 16px;border-bottom:1px solid var(--border);position:relative;flex-shrink:0}
+.header-title{font-size:16px;font-weight:600;letter-spacing:-0.3px}
+.header-btn{position:absolute;right:16px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--dim);padding:4px}
+/* status */
+.status{display:flex;align-items:center;gap:6px;padding:6px 16px;border-bottom:1px solid var(--border);font-size:12px;color:var(--dim2);flex-shrink:0;cursor:pointer}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.on{background:#22c55e}.status-dot.off{background:#ef4444}.status-dot.loading{background:#f59e0b}
+/* messages */
+.messages{flex:1;overflow-y:auto;padding:0}
+.messages-inner{max-width:768px;margin:0 auto;padding:16px 16px 80px}
+.msg{display:flex;gap:10px;margin-bottom:20px;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.msg.user .avatar{background:var(--user);color:var(--user-t)}
+.msg.ai .avatar{background:var(--bg3);color:var(--text)}
+.bubble{max-width:calc(100% - 50px);padding:12px 16px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg.user .bubble{background:var(--user);color:var(--user-t);border-top-left-radius:var(--radius);border-top-right-radius:4px;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
+.msg.ai .bubble{background:var(--ai);color:var(--ai-t);border-top-left-radius:4px;border-top-right-radius:var(--radius);border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
+.bubble code{background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px;font-size:13px;font-family:"JetBrains Mono",monospace}
+.bubble pre{background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:8px;overflow-x:auto;font-size:13px;margin:8px 0;white-space:pre}
+.bubble table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px}
+.bubble th,.bubble td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+.bubble th{background:var(--bg3);font-weight:600}
+.bubble a{color:#2563eb}
+/* typing */
+.typing{display:flex;gap:5px;padding:12px 16px;background:var(--ai);border-radius:var(--radius);border-top-left-radius:4px;width:fit-content}
+.typing-dot{width:8px;height:8px;border-radius:50%;background:var(--dim2);animation:bounce 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+/* tool call */
+.tool{display:flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:8px;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer;max-width:100%}
+.tool-icon{font-size:14px}.tool-name{font-weight:500;flex:1}.tool-arrow{font-size:10px}
+.tool-result{display:none;margin-top:4px;padding:8px;background:#fff;border-radius:6px;font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;color:#333}
+.tool.open .tool-result{display:block}
+/* input */
+.input-wrap{border-top:1px solid var(--border);padding:12px 16px;background:var(--bg);flex-shrink:0}
+.input-inner{max-width:768px;margin:0 auto;display:flex;align-items:flex-end;gap:8px}
+.input-box{flex:1;border:1px solid var(--border);border-radius:14px;padding:10px 16px;font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;resize:none;max-height:200px;line-height:1.5}
+.input-box:focus{border-color:#999}
+.input-box:disabled{opacity:.6}
+.send-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn.on{background:var(--user);color:var(--user-t)}
+.send-btn.off{background:var(--bg3);color:var(--dim2)}
+.send-btn:disabled{opacity:.5;cursor:default}
+.send-icon{font-size:18px;font-weight:700}
+/* empty */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 16px;text-align:center}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-title{font-size:22px;font-weight:600;letter-spacing:-0.5px;margin-bottom:24px}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--text);cursor:pointer;background:var(--bg);transition:border-color .15s}
+.chip:hover{border-color:#999}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none}
+.modal-bg.show{display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:24px 24px 32px;animation:slideUp .3s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.modal-title{font-size:18px;font-weight:600}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--dim);padding:4px}
+.modal-label{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.modal-input{width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:15px;background:var(--bg2);color:var(--text);outline:none}
+.modal-input:focus{border-color:#999}
+.modal-hint{font-size:12px;color:var(--dim2);margin-top:8px;line-height:18px}
+.modal-btn{width:100%;background:var(--user);color:var(--user-t);border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:24px}
+.modal-btn:disabled{opacity:.5;cursor:default}
+.modal-status{text-align:center;margin-top:12px;font-size:12px;color:var(--dim)}
+.modal-status.err{color:var(--danger)}
+/* responsive */
+@media(max-width:768px){
+  .messages-inner{padding:12px 12px 80px}
+  .input-wrap{padding:10px 12px}
+}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const API_KEY=localStorage.getItem("memi-url")||"";
+let serverUrl=API_KEY,messages=[],streaming=false,showSettings=false,streamText="";
+
+function $(s){return document.querySelector(s)}
+function $$(s){return document.querySelectorAll(s)}
+function h(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e}
+function t(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+
+async function health(url){
+  try{const r=await fetch(url+"/health",{signal:AbortSignal.timeout(5000)});const d=await r.json();return d?.status==="ok"}catch{return false}
+}
+
+async function sendMsg(text){
+  const c=text.trim();
+  if(!c||!serverUrl||streaming)return;
+  messages.push({role:"user",content:c,time:t()});
+  setInput("");
+  streaming=true;
+  streamText="";
+  messages.push({role:"assistant",content:"",time:t()});
+  render();
+  try{
+    const r=await fetch(serverUrl+"/api/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"1"},
+      body:JSON.stringify({model:"memi-agent",messages:messages.map(m=>({role:m.role,content:m.content})),stream:true})
+    });
+    const reader=r.body.getReader();const dec=new TextDecoder();let buf="";
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});const lines=buf.split("\n");buf=lines.pop()||"";
+      for(const line of lines){
+        if(!line.startsWith("data: "))continue;const d=line.slice(6).trim();if(d==="[DONE]")continue;
+        try{const p=JSON.parse(d);
+          if(p.type==="tool_call"||p.tool){
+            const name=p.tool||p.type||"tool";
+            let args="";try{const a=typeof p.args==="string"?JSON.parse(p.args):p.args;args=Object.values(a||{}).join(", ")}catch{args=String(p.args||"")}
+            const toolEl=h("div","tool",`<span class="tool-icon">⚙</span><span class="tool-name">${name}</span><span class="tool-arrow">▼</span>${p.result?`<div class="tool-result">${esc(String(p.result).slice(0,500))}</div>`:""}`);
+            toolEl.onclick=function(){this.classList.toggle("open")};
+            const last=messages[messages.length-1];
+            if(!last.tools)last.tools=[];
+            last.tools.push({name,args,result:String(p.result||"").slice(0,500)});
+            render();continue;
+          }
+          const delta=p.choices?.[0]?.delta?.content;
+          if(delta){streamText+=delta;messages[messages.length-1].content=streamText;render()}
+        }catch{}
+      }
+    }
+  }catch(e){messages[messages.length-1].content="请求失败: "+e.message}
+  streaming=false;render();save();
+}
+
+function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function md(t){
+  let s=esc(t);
+  s=s.replace(/```(\w*)\n([\s\S]*?)```/g,(_,l,c)=>`<pre><code>${c}</code></pre>`);
+  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+  s=s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+  return s;
+}
+
+function render(){
+  const root=$("#root");
+  const scrolled=($(".messages")?.scrollTop||0)+($(".messages")?.clientHeight||0)>=($(".messages")?.scrollHeight||0)-50;
+  let html=`<div class="app">`;
+  html+=`<div class="header"><span class="header-title">Memi</span><button class="header-btn" onclick="showSettings=true;render()">⚙</button></div>`;
+  const dotClass=serverUrl?"on":"off";
+  const dotLabel=serverUrl?"已连接"+(serverUrl.replace(/https?:\/\//,"").slice(0,30)):"未连接 — 点击设置";
+  html+=`<div class="status" onclick="showSettings=true;render()"><div class="status-dot ${dotClass}"></div>${dotLabel}</div>`;
+  html+=`<div class="messages" id="msgs"><div class="messages-inner">`;
+  if(messages.length===0){
+    html+=`<div class="empty"><div class="empty-icon">🦞</div><div class="empty-title">有什么我可以帮你的？</div><div class="chips">`;
+    ["写一首诗","帮我写个脚本","打开计算器","截个屏","帮我整理桌面","今天天气"].forEach(t=>{html+=`<div class="chip" onclick="sendMsg('${t}')">${t}</div>`});
+    html+=`</div></div>`;
+  }else{
+    messages.forEach(m=>{
+      if(!m.content&&m.role!=="user")return;
+      const isUser=m.role==="user";
+      html+=`<div class="msg ${isUser?"user":"ai"}">`;
+      html+=`<div class="avatar">${isUser?"U":"M"}</div>`;
+      html+=`<div class="bubble">`;
+      if(m.tools){m.tools.forEach(tool=>{
+        html+=`<div class="tool" onclick="this.classList.toggle('open')"><span class="tool-icon">⚙</span><span class="tool-name">${tool.name}</span><span class="tool-arrow">▼</span><div class="tool-result">${esc(tool.result)}</div></div>`;
+      })}
+      html+=md(m.content);
+      html+=`<div style="font-size:12px;margin-top:4px;color:${isUser?"rgba(255,255,255,.5)":"var(--dim2)"}">${m.time}</div>`;
+      html+=`</div></div>`;
+    });
+  }
+  if(streaming&&messages.length>0&&!messages[messages.length-1].content){
+    html+=`<div class="msg ai"><div class="avatar">M</div><div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  }
+  html+=`</div></div>`;
+  html+=`<div class="input-wrap"><div class="input-inner">`;
+  html+=`<textarea class="input-box" id="inp" placeholder="发消息..." rows="1" ${streaming?"disabled":""}></textarea>`;
+  html+=`<button class="send-btn ${streaming?"off":"on"}" id="sendBtn" onclick="sendMsg($('#inp').value)" ${streaming?"disabled":""}><span class="send-icon">↑</span></button>`;
+  html+=`</div></div></div>`;
+  if(showSettings){
+    html+=`<div class="modal-bg show" onclick="if(event.target===this){showSettings=false;render()}">`;
+    html+=`<div class="modal"><div class="modal-head"><span class="modal-title">服务器设置</span><button class="modal-close" onclick="showSettings=false;render()">✕</button></div>`;
+    html+=`<div class="modal-label">服务器地址</div>`;
+    html+=`<input class="modal-input" id="urlInput" value="${esc(serverUrl||"")}" placeholder="http://192.168.x.x:3001" autocapitalize="off">`;
+    html+=`<div class="modal-hint">电脑端运行 memi expose lan 后填入地址<br>或使用 ngrok 暴露到公网</div>`;
+    html+=`<button class="modal-btn" onclick="connect()">连接</button>`;
+    html+=`<div class="modal-status" id="connStatus"></div>`;
+    html+=`</div></div>`;
+  }
+  root.innerHTML=html;
+  const inp=$("#inp");
+  if(inp){
+    inp.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg(inp.value)}};
+    inp.oninput=function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,200)+"px"};
+    inp.focus();
+  }
+  if(scrolled){const m=$("#msgs");if(m)m.scrollTop=m.scrollHeight}
+}
+
+async function connect(){
+  const url=$("#urlInput")?.value?.trim();
+  if(!url)return;
+  const s=$("#connStatus");if(s)s.textContent="正在连接...";
+  const ok=await health(url);
+  if(ok){
+    serverUrl=url;showSettings=false;
+    localStorage.setItem("memi-url",url);
+    render();
+  }else{
+    if(s){s.textContent="连接失败";s.className="modal-status err"}
+  }
+}
+
+function setInput(v){const inp=$("#inp");if(inp){inp.value=v;inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,200)+"px"}}
+
+function save(){try{localStorage.setItem("memi-msgs",JSON.stringify(messages.slice(-100)))}catch{}}
+function load(){try{const s=localStorage.getItem("memi-msgs");if(s)messages=JSON.parse(s)}catch{}}
+
+load();render();
+if(serverUrl){health(serverUrl).then(ok=>{if(!ok)serverUrl="";render()})}
+</script>
+</body>
+</html>

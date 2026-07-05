@@ -148,6 +148,9 @@ app.get("/sw.js", (req, res) => {
 app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "memi-dashboard.html"));
 });
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "memi-web", "index.html"));
+});
 
 
 

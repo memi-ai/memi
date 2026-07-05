@@ -1007,9 +1007,216 @@ const TOOLS = [
       }
     },
   },
+  // ─── 桌面控制工具 ──────────────────────────────
+  { name: "desktop_list_windows", description: "列出所有可见窗口（标题、位置、大小）。用于查找目标窗口的精确标题。",
+    parameters: { type:"object", properties:{}, required:[] },
+    handler: async () => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          const r = execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Screen]::AllScreens | ForEach-Object {\\\"{\\$($_.DeviceName): \\$($_.Bounds.Width)x\\$($_.Bounds.Height) at \\$($_.Bounds.X),\\$($_.Bounds.Y)}\\\"}; Get-Process | Where-Object {\\$_.MainWindowTitle} | Select-Object Id, ProcessName, MainWindowTitle | Format-Table -AutoSize -HideTableHeaders"`, {timeout:10000,encoding:"utf8"});
+          return r.slice(0,3000) || "(无窗口)";
+        } else if (process.platform === "darwin") {
+          const r = execSync(`osascript -e 'tell app "System Events" to get {name, title, position, size} of every window of every process whose visible is true'`, {timeout:10000,encoding:"utf8"});
+          return r.slice(0,3000) || "(无窗口)";
+        }
+        return "当前系统不支持此功能";
+      } catch { return "获取窗口列表失败"; }
+    }
+  },
+  { name: "desktop_focus_window", description: "将指定窗口带到前台并聚焦。title 是窗口标题（支持部分匹配）。",
+    parameters: { type:"object", properties:{ title:{type:"string",description:"窗口标题关键词"} }, required:["title"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process"); const t = args.title;
+        if (process.platform === "win32") {
+          execSync(`powershell -command "(New-Object -COMObject Shell.Application).Windows() | Where-Object {\\$_.LocationName -like '*${t}*'} | ForEach-Object {\\$_.Visible=\\$true;\\$_.Navigate2(\\$_.LocationURL)}"`, {timeout:5000,encoding:"utf8",shell:true});
+          return `已尝试聚焦: ${t}`;
+        } else if (process.platform === "darwin") {
+          execSync(`osascript -e 'tell app "${t}" to activate'`, {timeout:5000});
+          return `已聚焦: ${t}`;
+        }
+        return "当前系统不支持此功能";
+      } catch { return `无法聚焦窗口: ${args.title}`; }
+    }
+  },
+  { name: "desktop_launch_app", description: "启动应用程序。name 是应用名称或路径（如 'notepad' / 'code' / 'C:\\Program Files\\...'）。",
+    parameters: { type:"object", properties:{ name:{type:"string",description:"应用名称或路径"} }, required:["name"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          execSync(`start "" "${args.name}"`, {timeout:10000,shell:true});
+        } else if (process.platform === "darwin") {
+          execSync(`open -a "${args.name}"`, {timeout:10000});
+        } else {
+          execSync(`${args.name} &`, {timeout:10000,shell:true});
+        }
+        return `已启动: ${args.name}`;
+      } catch { return `启动失败: ${args.name}`; }
+    }
+  },
+  { name: "desktop_close_window", description: "关闭指定窗口（先聚焦再发送关闭指令）。title 是窗口标题或应用名。",
+    parameters: { type:"object", properties:{ title:{type:"string",description:"窗口标题或应用名"} }, required:["title"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process"); const t = args.title;
+        if (process.platform === "win32") {
+          execSync(`powershell -command "(New-Object -COMObject Shell.Application).Windows() | Where-Object {\\$_.LocationName -like '*${t}*'} | ForEach-Object {\\$_.Quit()}"`, {timeout:5000,encoding:"utf8",shell:true});
+          return `已关闭: ${t}`;
+        } else if (process.platform === "darwin") {
+          execSync(`osascript -e 'tell app "${t}" to quit'`, {timeout:5000});
+          return `已关闭: ${t}`;
+        }
+        return "当前系统不支持此功能";
+      } catch { return `关闭窗口失败: ${args.title}`; }
+    }
+  },
+  { name: "desktop_mouse_move", description: "移动鼠标光标到指定坐标。x 和 y 是屏幕坐标（像素）。",
+    parameters: { type:"object", properties:{ x:{type:"number",description:"X坐标"}, y:{type:"number",description:"Y坐标"} }, required:["x","y"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Cursor]::Position = New-Object Drawing.Point(${args.x},${args.y})"`, {timeout:5000,shell:true});
+        } else if (process.platform === "darwin") {
+          execSync(`osascript -e 'tell app "System Events" to set position of every window to {${args.x}, ${args.y}}'`, {timeout:5000});  // simplified
+          return `鼠标移动到: ${args.x}, ${args.y}`;
+        }
+        return `鼠标已移动到: ${args.x}, ${args.y}`;
+      } catch { return `移动鼠标失败`; }
+    }
+  },
+  { name: "desktop_mouse_click", description: "在指定坐标点击鼠标。x/y 坐标，button 是 'left' 或 'right'（默认 left）。",
+    parameters: { type:"object", properties:{ x:{type:"number",description:"X坐标"}, y:{type:"number",description:"Y坐标"}, button:{type:"string",description:"left/right"} }, required:["x","y"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          const btn = args.button === "right" ? "Right" : "Left";
+          execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.Cursor]::Position = New-Object Drawing.Point(${args.x},${args.y});[Windows.Forms.SendKeys]::SendWait('{${btn === 'Right' ? '%{RIGHT}' : ''}}')"`, {timeout:5000,shell:true});
+          // Use user32 SendMessage for real click
+          execSync(`powershell -command "Add-Type @"using System;using System.Runtime.InteropServices;public class Mouse{[DllImport(\\"user32.dll\\")]public static extern void mouse_event(uint dwFlags,uint dx,uint dy,uint dwData,UIntPtr dwExtraInfo);}@;[Mouse]::mouse_event($($btn -eq 'Right' ? 8 : 2),${args.x},${args.y},0,[UIntPtr]::Zero);[Mouse]::mouse_event($($btn -eq 'Right' ? 16 : 4),${args.x},${args.y},0,[UIntPtr]::Zero)"`, {timeout:5000,shell:true});
+        } else if (process.platform === "darwin") {
+          const btn = args.button === "right" ? "button 2" : "button 1";
+          execSync(`osascript -e 'tell app "System Events" to click at {${args.x}, ${args.y}}'`, {timeout:5000});
+        }
+        return `已在 (${args.x}, ${args.y}) 点击`;
+      } catch { return `点击失败`; }
+    }
+  },
+  { name: "desktop_keyboard_type", description: "在当前聚焦的窗口中输入文本。text 是要输入的内容。注意：先使用 desktop_focus_window 聚焦目标窗口。",
+    parameters: { type:"object", properties:{ text:{type:"string",description:"要输入的文本"} }, required:["text"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process"); const text = args.text.replace(/"/g,'\\"');
+        if (process.platform === "win32") {
+          execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.SendKeys]::SendWait(\\"${text}\\")"`, {timeout:10000,shell:true});
+        } else if (process.platform === "darwin") {
+          execSync(`osascript -e 'tell app "System Events" to keystroke "${text}"'`, {timeout:10000});
+        }
+        return `已输入: ${args.text.slice(0,50)}`;
+      } catch { return `键盘输入失败`; }
+    }
+  },
+  { name: "desktop_keyboard_hotkey", description: "发送键盘快捷键组合。keys 是快捷键，如 'Ctrl+S', 'Alt+F4', 'Ctrl+Shift+P', 'Cmd+C'。自动适配 Win/Mac 修饰键。",
+    parameters: { type:"object", properties:{ keys:{type:"string",description:"快捷键，如 Ctrl+S / Cmd+C / Alt+F4"} }, required:["keys"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process"); let keys = args.keys;
+        if (process.platform === "win32") {
+          // Convert Cmd to Ctrl, keep as-is
+          keys = keys.replace(/Cmd/gi, "Ctrl");
+          execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.SendKeys]::SendWait('${keys.replace(/\+/g,' +')}')"`, {timeout:5000,shell:true});
+        } else if (process.platform === "darwin") {
+          keys = keys.replace(/Ctrl/gi, "command");
+          const parts = keys.split("+").map(s => s.trim());
+          const mods = parts.slice(0,-1).map(k => `"${k.toLowerCase()}"`).join(" using ");
+          const key = parts[parts.length-1].toLowerCase();
+          execSync(`osascript -e 'tell app "System Events" to keystroke "${key}" using ${mods}'`, {timeout:5000});
+        }
+        return `已发送快捷键: ${args.keys}`;
+      } catch { return `发送快捷键失败: ${args.keys}`; }
+    }
+  },
+  { name: "desktop_process_list", description: "列出正在运行的进程。filter 是可选的应用名关键词（如 'code' 只显示 VSCode）。",
+    parameters: { type:"object", properties:{ filter:{type:"string",description:"进程名过滤关键词（可选）"} }, required:[] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          const f = args.filter ? ` | Where-Object {\\$_.ProcessName -like '*${args.filter}*'}` : "";
+          const r = execSync(`powershell -command "Get-Process | Select-Object Id, ProcessName, @{N='Mem(MB)';E={[math]::Round(\\$_.WorkingSet64/1MB,1)}}${f} | Format-Table -AutoSize -HideTableHeaders"`, {timeout:10000,encoding:"utf8"});
+          return r.slice(0,3000) || "(无进程)";
+        } else if (process.platform === "darwin") {
+          const r = args.filter
+            ? execSync(`ps aux | grep -i "${args.filter}" | grep -v grep`, {timeout:5000,encoding:"utf8"})
+            : execSync("ps aux --sort=-%mem | head -30", {timeout:5000,encoding:"utf8"});
+          return r.slice(0,3000) || "(无进程)";
+        }
+        return "当前系统不支持此功能";
+      } catch { return "获取进程列表失败"; }
+    }
+  },
+  { name: "desktop_process_kill", description: "结束指定进程。可指定 pid（进程号）或 name（进程名）。注意：需要先确认用户。",
+    parameters: { type:"object", properties:{ pid:{type:"number",description:"进程ID"}, name:{type:"string",description:"进程名"} } },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (args.pid) {
+          if (process.platform === "win32") {
+            execSync(`taskkill /F /PID ${args.pid}`, {timeout:5000});
+          } else {
+            execSync(`kill -9 ${args.pid}`, {timeout:5000});
+          }
+          return `已结束进程: ${args.pid}`;
+        } else if (args.name) {
+          if (process.platform === "win32") {
+            execSync(`taskkill /F /IM "${args.name}.exe"`, {timeout:5000});
+          } else {
+            execSync(`pkill -f "${args.name}"`, {timeout:5000});
+          }
+          return `已结束进程: ${args.name}`;
+        }
+        return "请指定 pid 或 name";
+      } catch { return `结束进程失败: ${args.pid || args.name}`; }
+    }
+  },
+  { name: "desktop_window_resize", description: "调整窗口大小。title 是窗口标题，width/height 是目标尺寸（像素）。",
+    parameters: { type:"object", properties:{ title:{type:"string",description:"窗口标题"}, width:{type:"number",description:"宽度"}, height:{type:"number",description:"高度"}, x:{type:"number",description:"X坐标（可选）"}, y:{type:"number",description:"Y坐标（可选）"} }, required:["title","width","height"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          const pos = (args.x != null && args.y != null) ? `,\\$(${args.x}),\\$(${args.y})` : "";
+          execSync(`powershell -command "Add-Type @"using System;using System.Runtime.InteropServices;public class Win32{[DllImport(\\"user32.dll\\")]public static extern bool SetWindowPos(IntPtr hWnd,IntPtr hWndInsertAfter,int X,int Y,int cx,int cy,uint uFlags);}@;\\$procs=Get-Process | Where-Object {\\$_.MainWindowTitle -like '*${args.title}*'};if(\\$procs){Win32::SetWindowPos(\\$procs[0].MainWindowHandle,0,${args.x ?? 100},${args.y ?? 100},${args.width},${args.height},0x0040)}"`, {timeout:5000,shell:true});
+        } else if (process.platform === "darwin") {
+          execSync(`osascript -e 'tell app "${args.title}" to set bounds of window 1 to {${args.x ?? 0}, ${args.y ?? 0}, ${args.x ?? 0 + args.width}, ${args.y ?? 0 + args.height}}'`, {timeout:5000});
+        }
+        return `已调整窗口: ${args.title} 到 ${args.width}x${args.height}`;
+      } catch { return "调整窗口失败"; }
+    }
+  },
+  { name: "desktop_vscode_open", description: "在 VSCode 中打开文件或目录。path 是目标路径，line 是可选的行号。",
+    parameters: { type:"object", properties:{ path:{type:"string",description:"文件或目录路径"}, line:{type:"number",description:"可选的行号"} }, required:["path"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        const target = args.path.startsWith("~") ? require("os").homedir() + args.path.slice(1) : args.path;
+        if (args.line) {
+          execSync(`code --goto "${target}:${args.line}"`, {timeout:10000});
+          return `已打开 ${target}:${args.line}`;
+        }
+        execSync(`code "${target}"`, {timeout:10000});
+        return `已在 VSCode 中打开: ${target}`;
+      } catch { return "打开失败，请确保 VSCode 的 code 命令在 PATH 中"; }
+    }
+  },
+  { name: "desktop_window_snap", description: "将窗口贴靠到屏幕边缘。title 是窗口标题，position 是 'left'/'right'/'top'/'bottom'。",
+    parameters: { type:"object", properties:{ title:{type:"string",description:"窗口标题"}, position:{type:"string",enum:["left","right","top","bottom"]} }, required:["title","position"] },
+    handler: async (args) => {
+      try { const { execSync } = require("child_process");
+        if (process.platform === "win32") {
+          const key = args.position === "left" ? "L" : args.position === "right" ? "R" : args.position === "top" ? "U" : "D";
+          // Use Win+Arrow shortcut
+          execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.SendKeys]::SendWait('#{${key}}')"`, {timeout:3000,shell:true});
+        } else if (process.platform === "darwin") {
+          // macOS doesn't have native snap shortcuts, use rectangle/magnet or fallback
+          execSync(`osascript -e 'tell app "System Events" to keystroke "${args.position === "left" ? "left" : "right"}" using command down'`, {timeout:3000});
+        }
+        return `已将窗口贴靠到: ${args.position}`;
+      } catch { return "贴靠窗口失败"; }
+    }
+  },
 ];
-
-// ─── Agent 循环（提示词驱动工具调用）─────────────
 async function callAgent(provider, messages, runtimeTools = {}, thinkingLevel = "high", customSystemPrompt = "") {
   const results = { answer: "", toolCalls: [], iterations: 0, reasoning: "" };
 

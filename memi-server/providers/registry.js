@@ -33,7 +33,7 @@ function detectProvider(baseUrl, model) {
 }
 
 function loadBuiltinProviders() {
-  const builtins = ["openai", "gemini", "anthropic", "groq", "cohere", "perplexity", "nvidia", "cloudflare", "localai"];
+  const builtins = ["openai", "gemini", "anthropic", "groq", "cohere", "perplexity", "nvidia", "cloudflare", "localai", "xfyun"];
   for (const name of builtins) {
     try {
       const mod = require(`./${name}`);

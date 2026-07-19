@@ -27,7 +27,7 @@ async function streamChat(url, messages, onToken, onError) {
     const r = await fetch(`${url}/api/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json','ngrok-skip-browser-warning':'1' },
-      body: JSON.stringify({ model:'memi-agent', messages: messages.map(m=>({role:m.role,content:m.content})), stream:true }),
+      body: JSON.stringify({ model:'', messages: messages.map(m=>({role:m.role,content:m.content})), stream:true }),
     })
     const reader = r.body.getReader()
     const dec = new TextDecoder()

@@ -2,7 +2,7 @@ const readline = require("readline");
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const { A, _, log, ok, fail, DIR } = require("..");
+const { A, _, log, ok, fail, DIR, loadCfg } = require("..");
 
 module.exports = {
   name: "voice",
@@ -48,7 +48,7 @@ module.exports = {
             log(A.g + "  📝 " + data.text + A.r);
             const axios = require("axios");
             const resp2 = await axios.post("http://localhost:3001/api/v1/chat/completions", {
-              model: "memi-agent", messages: [{ role: "user", content: data.text }], stream: true, thinking: "high",
+              model: loadCfg().api1?.model || "", messages: [{ role: "user", content: data.text }], stream: true, thinking: "high",
             }, { responseType: "stream", timeout: 120000 });
             let fullResp = "";
             resp2.data.on("data", chunk => {

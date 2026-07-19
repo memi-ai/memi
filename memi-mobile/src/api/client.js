@@ -23,7 +23,7 @@ export async function streamChat(serverUrl, messages, onToken, onError) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'memi-agent',
+        model: '',
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         stream: true,
       }),

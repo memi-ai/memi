@@ -73,6 +73,7 @@ async function onboard() {
     "OpenRouter", "Together AI", "Perplexity", "Cohere",
     "Mistral AI", "xAI Grok", "Cloudflare Workers AI",
     "阿里云百炼", "智谱 AI", "火山方舟", "Kimi", "硅基流动",
+    "讯飞星火", "NVIDIA",
     "Ollama (本地)", "LM Studio (本地)", "自定义",
   ];
 
@@ -87,6 +88,8 @@ async function onboard() {
     "智谱 AI":{url:"https://open.bigmodel.cn/api/paas/v4",models:"glm-4-flash,glm-4-plus,glm-4-air".split(",")},
     "Kimi":{url:"https://api.moonshot.cn/v1",models:"moonshot-v1-8k,moonshot-v1-32k,moonshot-v1-128k".split(",")},
     "硅基流动":{url:"https://api.siliconflow.cn/v1",models:"Qwen/Qwen2.5-7B-Instruct,deepseek-ai/DeepSeek-V3".split(",")},
+    "讯飞星火":{url:"https://spark-api-open.xf-yun.com/v1",models:"lite,pro,pro-128k,max,4.0Ultra".split(",")},
+    "NVIDIA":{url:"https://integrate.api.nvidia.com/v1",models:"meta/llama-3.1-70b-instruct".split(",")},
     "Ollama (本地)":{url:"http://localhost:11434/v1",models:"llama3:8b,qwen2.5:7b".split(",")},
     "LM Studio (本地)":{url:"http://localhost:1234/v1",models:"local-model".split(",")},
   };

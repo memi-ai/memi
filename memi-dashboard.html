@@ -312,7 +312,7 @@ async function send(){
   document.getElementById("st").textContent=t("thinking");document.getElementById("dot").className="dot";
   rebuildToolLogs(); // 先重建，确保只显示当前会话的工具
   try{
-    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"memi-agent",messages,stream:true,thinking:getThink(),systemPrompt:""})});
+    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"",messages,stream:true,thinking:getThink(),systemPrompt:""})});
     const reader=r.body.getReader();const dec=new TextDecoder();let buf="";
     while(true){
       const{done,value}=await reader.read();if(done)break;
@@ -365,7 +365,7 @@ async function autoName(){
   let name="";
   try{
     const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"memi-agent",thinking:"off",messages:[
+      body:JSON.stringify({model:"",thinking:"off",messages:[
         {role:"user",content:"给这段对话起一个简短名称（3-6个汉字），直接描述对话主题，不要修饰、不要诗意、不要标点。\n\n对话:\n"+userMsgs}
       ],max_tokens:30,temperature:0.3})
     });

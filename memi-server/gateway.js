@@ -384,7 +384,7 @@ if(d.success)addMsg(d.response||'','agent');else addMsg('错误: '+(d.error||'')
       fs.writeFileSync(path.join(configDir, "config.json"), JSON.stringify({
         apiBase: "http://localhost:3001/api/v1",
         apiKey: "",
-        model: "memi-agent",
+        model: "",
       }, null, 2));
       send("status", { message: "已配置 API 后端 → Memi" });
     } catch (e) {

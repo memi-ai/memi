@@ -15,6 +15,46 @@ function supportsThinking(model) {
 // ─── 工具定义 ────────────────────────────────────────
 const TOOLS = [
   {
+    name: "todo",
+    description: "管理待办事项列表。action 是 list/add/complete/remove/clear。add 时用 title 添加任务，complete/remove 时用 id 指定任务。",
+    parameters: { type:"object", properties:{
+      action:{type:"string",description:"list/add/complete/remove/clear"},
+      id:{type:"number",description:"任务序号（complete/remove 时必填）"},
+      title:{type:"string",description:"任务标题（add 时必填）"}
+    }, required:["action"] },
+    handler: async (args) => {
+      const f = path.join(__dirname, "..", "..", "memi-config", "todos.json");
+      let todos = [];
+      try { if (fs.existsSync(f)) todos = JSON.parse(fs.readFileSync(f, "utf8")); } catch {}
+      switch (args.action) {
+        case "list":
+          if (!todos.length) return "当前没有待办事项。";
+          return todos.map((t, i) => `${i+1}. ${t.done ? "[x]" : "[ ]"} ${t.title}`).join("\n");
+        case "add":
+          if (!args.title) return "请提供任务标题。";
+          todos.push({ title: args.title, done: false, time: new Date().toISOString() });
+          fs.writeFileSync(f, JSON.stringify(todos, null, 2));
+          return `已添加: ${args.title}`;
+        case "complete":
+          if (args.id == null || args.id < 1 || args.id > todos.length) return `请输入有效序号 (1-${todos.length})。`;
+          todos[args.id - 1].done = true;
+          fs.writeFileSync(f, JSON.stringify(todos, null, 2));
+          return `已完成: ${todos[args.id - 1].title}`;
+        case "remove":
+          if (args.id == null || args.id < 1 || args.id > todos.length) return `请输入有效序号 (1-${todos.length})。`;
+          const removed = todos.splice(args.id - 1, 1)[0];
+          fs.writeFileSync(f, JSON.stringify(todos, null, 2));
+          return `已删除: ${removed.title}`;
+        case "clear":
+          todos = [];
+          fs.writeFileSync(f, JSON.stringify(todos, null, 2));
+          return "已清空所有待办事项。";
+        default:
+          return "未知操作。支持: list/add/complete/remove/clear";
+      }
+    }
+  },
+  {
     name: "get_location",
     description: "获取用户当前地理位置（基于IP）。返回城市、地区、国家。当用户问题涉及位置/天气/周边时自动调用。",
     parameters: { type: "object", properties: {}, required: [] },

@@ -74,7 +74,7 @@ async function chat() {
     try {
       const r = await fetch("http://localhost:3001/api/v1/chat/completions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "memi-agent", messages: msgs, stream: true, thinking: cfg.thinkLevel || "high", systemPrompt: agentCfg.systemPrompt || "" }),
+        body: JSON.stringify({ model: cfg.api1?.model || "", messages: msgs, stream: true, thinking: cfg.thinkLevel || "high", systemPrompt: agentCfg.systemPrompt || "" }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
 
@@ -342,7 +342,7 @@ async function chat() {
       const userMsgs = msgs.filter(m => m.role === "user").map(m => m.content).join("; ").slice(0, 200);
       const r = await fetch("http://localhost:3001/api/v1/chat/completions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "memi-agent", messages: [{ role: "user", content: "给这段对话起一个简短名称（3-6个汉字），直接描述对话主题，不要修饰、不要标点。\n\n对话:\n" + userMsgs }], max_tokens: 20, temperature: 0.3 })
+        body: JSON.stringify({ model: cfg.api1?.model || "", messages: [{ role: "user", content: "给这段对话起一个简短名称（3-6个汉字），直接描述对话主题，不要修饰、不要标点。\n\n对话:\n" + userMsgs }], max_tokens: 20, temperature: 0.3 })
       });
       const d = await r.json(); let name = (d.choices?.[0]?.message?.content || "").replace(/["\n\r]/g, "").trim();
       if (!name || name.length < 1 || name.length > 20 || !/[\u4e00-\u9fff]/.test(name)) return;

@@ -6,229 +6,1077 @@
 <title>Memi</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#fff;--bg2:#f7f7f8;--bg3:#ececf1;--text:#171717;--dim:#676767;--dim2:#8e8ea0;--border:#e5e5e5;--user:#171717;--user-t:#fff;--ai:#f7f7f8;--ai-t:#171717;--radius:18px}
-html,body,#root{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
-.app{display:flex;flex-direction:column;height:100%;height:100dvh}
-/* header */
-.header{display:flex;align-items:center;justify-content:center;padding:12px 16px;border-bottom:1px solid var(--border);position:relative;flex-shrink:0}
-.header-title{font-size:16px;font-weight:600;letter-spacing:-0.3px}
-.header-btn{position:absolute;right:16px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--dim);padding:4px}
-/* status */
-.status{display:flex;align-items:center;gap:6px;padding:6px 16px;border-bottom:1px solid var(--border);font-size:12px;color:var(--dim2);flex-shrink:0;cursor:pointer}
-.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.status-dot.on{background:#22c55e}.status-dot.off{background:#ef4444}.status-dot.loading{background:#f59e0b}
-/* messages */
-.messages{flex:1;overflow-y:auto;padding:0}
-.messages-inner{max-width:768px;margin:0 auto;padding:16px 16px 80px}
-.msg{display:flex;gap:10px;margin-bottom:20px;animation:fadeIn .2s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+:root{--bg:#fff;--bg2:#f7f7f8;--bg3:#ececf1;--text:#171717;--dim:#676767;--dim2:#8e8ea0;--border:#e5e5e5;--hover:#f5f5f5;--sidebar:#f0f0f0;--radius:12px;--blue:#10a37f;--danger:#ef4444}
+html,body,#root{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+::selection{background:#c7d2fe}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.app{display:flex;height:100%;height:100dvh}
+
+/* Dark theme */
+[data-theme="dark"]{--bg:#171717;--bg2:#212121;--bg3:#2f2f2f;--text:#ececec;--dim:#9a9a9a;--dim2:#6b6b6b;--border:#3a3a3a;--hover:#2a2a2a;--sidebar:#1e1e1e}
+[data-theme="dark"] .msg-content pre{background:#0d0d0d}
+[data-theme="dark"] .tool-call{background:#0c2d48;border-color:#1e5a8a;color:#7dd3fc}
+[data-theme="dark"] .modal-input{background:#2a2a2a;border-color:#3a3a3a;color:var(--text)}
+[data-theme="dark"] input,[data-theme="dark"] textarea{background:#2a2a2a;border-color:#3a3a3a;color:var(--text)}
+
+/* ===== Sidebar ===== */
+.sidebar{width:260px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:margin-left .3s}
+.sidebar-header{padding:12px;display:flex;flex-direction:column;gap:8px}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-weight:600;font-size:15px;cursor:default}
+.sidebar-brand svg{width:24px;height:24px;flex-shrink:0}
+.sidebar-actions{display:flex;flex-direction:column;gap:2px}
+.sidebar-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;background:none;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);text-align:left;width:100%;transition:background .1s}
+.sidebar-btn:hover{background:rgba(128,128,128,.15)}
+.sidebar-btn svg{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.sidebar-search{margin:4px 12px 8px;position:relative}
+.sidebar-search input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);outline:none;color:var(--text)}
+.sidebar-search input:focus{border-color:#999}
+.sidebar-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;opacity:.4}
+.sidebar-label{font-size:12px;font-weight:600;color:var(--dim2);padding:12px 16px 6px;text-transform:uppercase;letter-spacing:.3px}
+.sidebar-list{flex:1;overflow-y:auto;padding:0 8px}
+.sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text);transition:background .1s;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-item:hover{background:rgba(128,128,128,.12)}
+.sidebar-item.active{background:rgba(128,128,128,.18);font-weight:500}
+.sidebar-item-text{flex:1;overflow:hidden;text-overflow:ellipsis}
+.sidebar-item-del{opacity:0;padding:2px;border:none;background:none;cursor:pointer;font-size:14px;color:var(--dim);border-radius:4px;flex-shrink:0}
+.sidebar-item:hover .sidebar-item-del{opacity:1}
+.sidebar-item-del:hover{background:rgba(128,128,128,.2)}
+.sidebar-footer{border-top:1px solid var(--border);padding:8px}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px}
+.sidebar-user:hover{background:rgba(128,128,128,.12)}
+.sidebar-avatar{width:32px;height:32px;border-radius:50%;background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.sidebar-user-info{flex:1;min-width:0}
+.sidebar-user-name{font-size:13px;font-weight:500}
+.sidebar-user-plan{font-size:11px;color:var(--dim2)}
+
+/* ===== Main ===== */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.main-header{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.menu-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px}
+.menu-btn:hover{background:var(--hover)}
+.menu-btn svg{width:20px;height:20px;color:var(--text)}
+.model-select{display:flex;align-items:center;gap:4px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-size:14px;font-weight:500;color:var(--text)}
+.model-select:hover{background:var(--hover)}
+.model-arrow{font-size:10px;opacity:.5}
+.header-spacer{flex:1}
+.header-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.header-btn:hover{background:var(--hover)}
+.header-btn svg{width:20px;height:20px;color:var(--dim)}
+
+/* ===== Content Area ===== */
+.content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.content-inner{max-width:768px;width:100%;margin:0 auto;padding:0 16px;flex:1;display:flex;flex-direction:column}
+
+/* Empty State */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:24px}
+.empty-title{font-size:28px;font-weight:600;color:var(--text);text-align:center}
+.quick-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}
+.quick-chip{display:flex;align-items:center;gap:6px;padding:10px 16px;border:1px solid var(--border);border-radius:999px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text);transition:all .15s}
+.quick-chip:hover{border-color:#999;background:var(--hover)}
+.quick-chip svg{width:16px;height:16px;opacity:.6}
+
+/* Messages */
+.messages{flex:1;padding:20px 0}
+.msg{display:flex;gap:12px;padding:16px 0;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{flex-direction:row-reverse}
-.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
-.msg.user .avatar{background:var(--user);color:var(--user-t)}
-.msg.ai .avatar{background:var(--bg3);color:var(--text)}
-.bubble{max-width:calc(100% - 50px);padding:12px 16px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.msg.user .bubble{background:var(--user);color:var(--user-t);border-top-left-radius:var(--radius);border-top-right-radius:4px;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
-.msg.ai .bubble{background:var(--ai);color:var(--ai-t);border-top-left-radius:4px;border-top-right-radius:var(--radius);border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
-.bubble code{background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px;font-size:13px;font-family:"JetBrains Mono",monospace}
-.bubble pre{background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:8px;overflow-x:auto;font-size:13px;margin:8px 0;white-space:pre}
-.bubble table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px}
-.bubble th,.bubble td{border:1px solid var(--border);padding:6px 10px;text-align:left}
-.bubble th{background:var(--bg3);font-weight:600}
-.bubble a{color:#2563eb}
-/* typing */
-.typing{display:flex;gap:5px;padding:12px 16px;background:var(--ai);border-radius:var(--radius);border-top-left-radius:4px;width:fit-content}
+.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;background:var(--bg3);color:var(--text)}
+.msg.user .msg-avatar{background:var(--text);color:var(--bg)}
+.msg-body{flex:1;min-width:0}
+.msg-content{font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.msg-content code{background:rgba(128,128,128,.15);padding:2px 5px;border-radius:4px;font-size:13px;font-family:"JetBrains Mono","SF Mono",monospace}
+.msg-content pre{background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:10px;overflow-x:auto;font-size:13px;margin:10px 0;font-family:"JetBrains Mono","SF Mono",monospace}
+.msg-content pre code{background:none;padding:0;color:inherit}
+.msg-content table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+.msg-content th,.msg-content td{border:1px solid var(--border);padding:7px 12px;text-align:left}
+.msg-content th{background:var(--bg3);font-weight:600}
+.msg-content a{color:#2563eb;text-decoration:none}
+.msg-content a:hover{text-decoration:underline}
+.msg-content ul,.msg-content ol{padding-left:20px;margin:6px 0}
+.msg-content li{margin:3px 0}
+
+/* Tool calls */
+.tool-call{display:flex;align-items:center;gap:6px;padding:8px 12px;margin:8px 0;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:12px;color:#0369a1;cursor:pointer;transition:background .1s}
+.tool-call:hover{background:#e0f2fe}
+.tool-call-icon{font-size:14px}
+.tool-call-name{font-weight:500;flex:1}
+.tool-call-arrow{font-size:10px;transition:transform .2s}
+.tool-call.open .tool-call-arrow{transform:rotate(180deg)}
+.tool-call-result{display:none;margin-top:6px;padding:10px;background:var(--bg);border-radius:6px;font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;color:var(--text);border:1px solid var(--border)}
+.tool-call.open .tool-call-result{display:block}
+
+/* Message Actions */
+.msg-actions{display:flex;gap:2px;margin-top:6px;opacity:0;transition:opacity .15s}
+.msg:hover .msg-actions{opacity:1}
+.msg-action{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.msg-action:hover{background:var(--hover);color:var(--text)}
+.msg-action.active{color:var(--blue)}
+.msg-action svg{width:16px;height:16px}
+
+/* Typing */
+.typing-indicator{display:flex;gap:4px;padding:12px 16px}
 .typing-dot{width:8px;height:8px;border-radius:50%;background:var(--dim2);animation:bounce 1.2s infinite}
-.typing-dot:nth-child(2){animation-delay:.15s}.typing-dot:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-/* tool call */
-.tool{display:flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:8px;background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer;max-width:100%}
-.tool-icon{font-size:14px}.tool-name{font-weight:500;flex:1}.tool-arrow{font-size:10px}
-.tool-result{display:none;margin-top:4px;padding:8px;background:#fff;border-radius:6px;font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;color:#333}
-.tool.open .tool-result{display:block}
-/* input */
-.input-wrap{border-top:1px solid var(--border);padding:12px 16px;background:var(--bg);flex-shrink:0}
-.input-inner{max-width:768px;margin:0 auto;display:flex;align-items:flex-end;gap:8px}
-.input-box{flex:1;border:1px solid var(--border);border-radius:14px;padding:10px 16px;font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;resize:none;max-height:200px;line-height:1.5}
-.input-box:focus{border-color:#999}
-.input-box:disabled{opacity:.6}
-.send-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.send-btn.on{background:var(--user);color:var(--user-t)}
-.send-btn.off{background:var(--bg3);color:var(--dim2)}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ===== Input Area ===== */
+.input-area{border-top:1px solid var(--border);padding:12px 16px 16px;flex-shrink:0}
+.input-container{max-width:768px;margin:0 auto}
+.input-box{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--border);border-radius:16px;padding:8px 12px;background:var(--bg);transition:border-color .15s}
+.input-box:focus-within{border-color:#999}
+.input-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--dim)}
+.input-btn:hover{background:var(--hover);color:var(--text)}
+.input-btn svg{width:20px;height:20px}
+.input-textarea{flex:1;border:none;outline:none;resize:none;font-size:15px;font-family:inherit;line-height:1.5;max-height:200px;background:transparent;color:var(--text)}
+.input-textarea::placeholder{color:var(--dim2)}
+.send-btn{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.send-btn.ready{background:var(--text);color:var(--bg)}
+.send-btn.ready:hover{opacity:.8}
+.send-btn.empty{background:var(--bg3);color:var(--dim2);cursor:default}
 .send-btn:disabled{opacity:.5;cursor:default}
-.send-icon{font-size:18px;font-weight:700}
-/* empty */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 16px;text-align:center}
-.empty-icon{font-size:48px;margin-bottom:16px}
-.empty-title{font-size:22px;font-weight:600;letter-spacing:-0.5px;margin-bottom:24px}
-.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.chip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--text);cursor:pointer;background:var(--bg);transition:border-color .15s}
-.chip:hover{border-color:#999}
-/* modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none}
-.modal-bg.show{display:flex;align-items:flex-end;justify-content:center}
-.modal{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:24px 24px 32px;animation:slideUp .3s}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.modal-title{font-size:18px;font-weight:600}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--dim);padding:4px}
-.modal-label{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.modal-input{width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:15px;background:var(--bg2);color:var(--text);outline:none}
-.modal-input:focus{border-color:#999}
-.modal-hint{font-size:12px;color:var(--dim2);margin-top:8px;line-height:18px}
-.modal-btn{width:100%;background:var(--user);color:var(--user-t);border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:24px}
-.modal-btn:disabled{opacity:.5;cursor:default}
-.modal-status{text-align:center;margin-top:12px;font-size:12px;color:var(--dim)}
-.modal-status.err{color:var(--danger)}
-/* responsive */
+.send-btn svg{width:18px;height:18px}
+.input-disclaimer{text-align:center;font-size:11px;color:var(--dim2);margin-top:8px}
+
+/* Connection status */
+.conn-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer}
+.conn-badge.on{background:#dcfce7;color:#166534}
+.conn-badge.off{background:#fee2e2;color:#991b1b}
+.conn-badge:hover{opacity:.8}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.conn-badge.on .conn-dot{background:#22c55e}
+.conn-badge.off .conn-dot{background:#ef4444}
+
+/* ===== Settings Panel ===== */
+.settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;backdrop-filter:blur(2px)}
+.settings-overlay.show{display:flex;justify-content:flex-end}
+.settings-panel{width:420px;max-width:100%;height:100%;background:var(--bg);overflow-y:auto;animation:slideIn .25s;padding:0}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.settings-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1}
+.settings-title{font-size:18px;font-weight:600}
+.settings-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:var(--dim);font-size:20px}
+.settings-close:hover{background:var(--hover)}
+.settings-body{padding:20px}
+.settings-section{margin-bottom:28px}
+.settings-section-title{font-size:13px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:12px}
+.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-label{font-size:14px;color:var(--text)}
+.settings-row-desc{font-size:12px;color:var(--dim2);margin-top:2px}
+.settings-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;background:var(--bg);color:var(--text);outline:none;margin-top:8px}
+.settings-input:focus{border-color:#999}
+.settings-textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);outline:none;margin-top:8px;min-height:80px;resize:vertical;font-family:inherit;line-height:1.5}
+.settings-textarea:focus{border-color:#999}
+.settings-select{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:14px;background:var(--bg);color:var(--text);outline:none;cursor:pointer}
+.settings-select:focus{border-color:#999}
+.settings-slider{-webkit-appearance:none;width:120px;height:4px;border-radius:2px;background:var(--border);outline:none}
+.settings-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);cursor:pointer}
+.settings-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);cursor:pointer;transition:all .15s}
+.settings-tag:hover{border-color:#999}
+.settings-tag.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.settings-btn{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text);text-align:center;transition:all .15s}
+.settings-btn:hover{background:var(--hover);border-color:#999}
+.settings-btn.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.settings-hint{font-size:12px;color:var(--dim2);margin-top:8px;line-height:18px}
+.settings-divider{height:1px;background:var(--border);margin:20px 0}
+.settings-danger{color:var(--danger);cursor:pointer;padding:8px 16px;border:1px solid var(--danger);border-radius:8px;background:none;font-size:13px;width:100%;text-align:center;transition:all .15s}
+.settings-danger:hover{background:var(--danger);color:#fff}
+
+/* ===== Responsive ===== */
 @media(max-width:768px){
-  .messages-inner{padding:12px 12px 80px}
-  .input-wrap{padding:10px 12px}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:100;margin-left:-260px}
+  .sidebar.open{margin-left:0;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .sidebar-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99}
+  .sidebar-mask.show{display:block}
+  .menu-btn{display:flex}
+  .content-inner{padding:0 12px}
+  .input-area{padding:10px 12px 14px}
+  .empty-title{font-size:22px}
+  .model-select{font-size:13px;padding:5px 10px}
+  .settings-panel{width:100%}
 }
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-const API_KEY=localStorage.getItem("memi-url")||"";
-let serverUrl=API_KEY,messages=[],streaming=false,showSettings=false,streamText="";
+// ===== State =====
+let serverUrl = localStorage.getItem("memi-url") || "";
+let sessions = JSON.parse(localStorage.getItem("memi-sessions") || "[]");
+let currentSessionId = localStorage.getItem("memi-current") || "";
+let messages = [];
+let streaming = false;
+let streamText = "";
+let showSettings = false;
+let settingsTab = "connection";
+let sidebarOpen = false;
+let searchQuery = "";
+let draftText = "";
+let lastStreamUpdate = 0;
+let showTodoPanel = false;
+let showTodoInput = false;
+let todos = [];
+let todoPollTimer = null;
 
-function $(s){return document.querySelector(s)}
-function $$(s){return document.querySelectorAll(s)}
-function h(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e}
-function t(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+// Settings
+let settings = JSON.parse(localStorage.getItem("memi-settings") || "{}");
+if (!settings.model) settings.model = "";
+if (!settings.persona) settings.persona = "default";
+if (!settings.temperature) settings.temperature = 0.7;
+if (!settings.theme) settings.theme = "light";
+if (!settings.systemPrompt) settings.systemPrompt = "";
+if (!settings.apiKeys) settings.apiKeys = {};
+if (!settings.voiceEnabled) settings.voiceEnabled = false;
 
-async function health(url){
-  try{const r=await fetch(url+"/health",{signal:AbortSignal.timeout(5000)});const d=await r.json();return d?.status==="ok"}catch{return false}
+// Personas
+const PERSONAS = [
+  { id: "default", name: "默认助手", desc: "通用 AI 助手" },
+  { id: "coder", name: "程序员", desc: "专注代码与调试" },
+  { id: "poet", name: "诗人", desc: "文艺范，诗词歌赋" },
+  { id: "teacher", name: "老师", desc: "耐心讲解，深入浅出" },
+  { id: "friend", name: "老友", desc: "轻松聊天" },
+  { id: "boss", name: "老板", desc: "强势直接" },
+];
+
+// Models
+const MODELS = [
+  { id: "gpt-4o", name: "GPT-4o", desc: "OpenAI" },
+  { id: "gpt-4o-mini", name: "GPT-4o Mini", desc: "OpenAI 轻量" },
+  { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", desc: "Anthropic" },
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", desc: "Google" },
+  { id: "deepseek-chat", name: "DeepSeek Chat", desc: "深度求索" },
+  { id: "deepseek-reasoner", name: "DeepSeek Reasoner", desc: "深度求索推理" },
+  { id: "meta/llama-3.3-70b-instruct", name: "Llama 3.3 70B", desc: "Meta 开源" },
+  { id: "qwen-max", name: "Qwen Max", desc: "阿里云" },
+];
+
+// ===== Init =====
+if (!sessions.length) newSession();
+applyTheme(settings.theme);
+
+function newSession() {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  sessions.unshift({ id, title: "新对话", time: Date.now(), messages: [] });
+  currentSessionId = id;
+  messages = [];
+  saveAll();
 }
 
-async function sendMsg(text){
-  const c=text.trim();
-  if(!c||!serverUrl||streaming)return;
-  messages.push({role:"user",content:c,time:t()});
-  setInput("");
-  streaming=true;
-  streamText="";
-  messages.push({role:"assistant",content:"",time:t()});
+function loadSession(id) {
+  saveCurrent();
+  currentSessionId = id;
+  const s = sessions.find(x => x.id === id);
+  messages = s ? JSON.parse(JSON.stringify(s.messages)) : [];
+  sidebarOpen = false;
   render();
-  try{
-    const r=await fetch(serverUrl+"/api/v1/chat/completions",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"1"},
-      body:JSON.stringify({model:"memi-agent",messages:messages.map(m=>({role:m.role,content:m.content})),stream:true})
+}
+
+function saveCurrent() {
+  const s = sessions.find(x => x.id === currentSessionId);
+  if (s) {
+    s.messages = messages;
+    if (messages.length && !s.titleChanged) {
+      const first = messages.find(m => m.role === "user");
+      if (first) s.title = first.content.slice(0, 30) + (first.content.length > 30 ? "..." : "");
+    }
+    s.time = Date.now();
+    sessions.sort((a,b) => b.time - a.time);
+  }
+  saveAll();
+}
+
+function deleteSession(id, e) {
+  e.stopPropagation();
+  sessions = sessions.filter(x => x.id !== id);
+  if (currentSessionId === id) {
+    if (sessions.length) loadSession(sessions[0].id);
+    else { newSession(); render(); }
+  } else render();
+  saveAll();
+}
+
+function saveAll() {
+  localStorage.setItem("memi-sessions", JSON.stringify(sessions));
+  localStorage.setItem("memi-current", currentSessionId);
+  localStorage.setItem("memi-settings", JSON.stringify(settings));
+}
+
+// ===== Helpers =====
+const $ = s => document.querySelector(s);
+const esc = t => (t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+function timeStr() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+function applyTheme(theme) {
+  if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else if (theme === "light") document.documentElement.removeAttribute("data-theme");
+  else if (theme === "system") {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.removeAttribute("data-theme");
+  }
+}
+
+// ===== Server Config =====
+let serverConfig = {};
+
+async function loadServerConfig() {
+  if (!serverUrl) return;
+  try {
+    const r = await fetch(serverUrl + "/api/config", { signal: AbortSignal.timeout(5000), headers: { "ngrok-skip-browser-warning": "1" } });
+    serverConfig = await r.json();
+    saveAll();
+  } catch {}
+}
+
+async function saveServerConfig(patch) {
+  if (!serverUrl) return false;
+  try {
+    const r = await fetch(serverUrl + "/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
+      body: JSON.stringify(patch),
+      signal: AbortSignal.timeout(5000)
     });
-    const reader=r.body.getReader();const dec=new TextDecoder();let buf="";
-    while(true){
-      const{done,value}=await reader.read();if(done)break;
-      buf+=dec.decode(value,{stream:true});const lines=buf.split("\n");buf=lines.pop()||"";
-      for(const line of lines){
-        if(!line.startsWith("data: "))continue;const d=line.slice(6).trim();if(d==="[DONE]")continue;
-        try{const p=JSON.parse(d);
-          if(p.type==="tool_call"||p.tool){
-            const name=p.tool||p.type||"tool";
-            let args="";try{const a=typeof p.args==="string"?JSON.parse(p.args):p.args;args=Object.values(a||{}).join(", ")}catch{args=String(p.args||"")}
-            const toolEl=h("div","tool",`<span class="tool-icon">⚙</span><span class="tool-name">${name}</span><span class="tool-arrow">▼</span>${p.result?`<div class="tool-result">${esc(String(p.result).slice(0,500))}</div>`:""}`);
-            toolEl.onclick=function(){this.classList.toggle("open")};
-            const last=messages[messages.length-1];
-            if(!last.tools)last.tools=[];
-            last.tools.push({name,args,result:String(p.result||"").slice(0,500)});
-            render();continue;
+    const d = await r.json();
+    if (d.success) serverConfig = d.config;
+    return d.success;
+  } catch { return false; }
+}
+
+// ===== API =====
+async function health(url) {
+  try { const r = await fetch(url + "/health", { signal: AbortSignal.timeout(5000) }); const d = await r.json(); return d?.status === "ok"; } catch { return false; }
+}
+
+async function sendMsg(text) {
+  const c = text.trim();
+  if (!c || !serverUrl || streaming) return;
+  messages.push({ role: "user", content: c, time: timeStr() });
+  setInput("");
+  streaming = true;
+  streamText = "";
+  messages.push({ role: "assistant", content: "", time: timeStr(), tools: [] });
+  render();
+  scrollBottom();
+
+  // Build system prompt
+  let sysContent = settings.systemPrompt || "";
+  const persona = PERSONAS.find(p => p.id === settings.persona);
+  if (persona && persona.id !== "default") {
+    sysContent = (sysContent ? sysContent + "\n\n" : "") + `你是一个${persona.name}角色。${persona.desc}。`;
+  }
+
+  const apiMessages = [];
+  if (sysContent) apiMessages.push({ role: "system", content: sysContent });
+  messages.forEach(m => {
+    if (m.content) apiMessages.push({ role: m.role, content: m.content });
+  });
+
+  try {
+    const r = await fetch(serverUrl + "/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
+      body: JSON.stringify({ model: settings.model, messages: apiMessages, temperature: settings.temperature, stream: true })
+    });
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const d = line.slice(6).trim();
+        if (d === "[DONE]") continue;
+        try {
+          const p = JSON.parse(d);
+          if (p.type === "tool_call" || p.tool) {
+            const name = p.tool || p.type || "tool";
+            let args = "";
+            try { const a = typeof p.args === "string" ? JSON.parse(p.args) : p.args; args = Object.values(a||{}).join(", "); } catch { args = String(p.args||""); }
+            const last = messages[messages.length - 1];
+            if (!last.tools) last.tools = [];
+            last.tools.push({ name, args, result: String(p.result||"").slice(0, 500) });
+            render(); continue;
           }
-          const delta=p.choices?.[0]?.delta?.content;
-          if(delta){streamText+=delta;messages[messages.length-1].content=streamText;render()}
-        }catch{}
+          const delta = p.choices?.[0]?.delta?.content;
+          if (delta) {
+            streamText += delta;
+            messages[messages.length - 1].content = streamText;
+            const now = Date.now();
+            if (now - lastStreamUpdate > 40) {
+              lastStreamUpdate = now;
+              const el = document.getElementById("msg-content-last");
+              if (el) { el.innerHTML = md(streamText); scrollBottom(); }
+              else { render(); scrollBottom(); }
+            }
+          }
+        } catch {}
       }
     }
-  }catch(e){messages[messages.length-1].content="请求失败: "+e.message}
-  streaming=false;render();save();
+  } catch(e) {
+    messages[messages.length - 1].content = "请求失败: " + e.message;
+  }
+  streaming = false;
+  render();
+  saveCurrent();
 }
 
-function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-function md(t){
-  let s=esc(t);
-  s=s.replace(/```(\w*)\n([\s\S]*?)```/g,(_,l,c)=>`<pre><code>${c}</code></pre>`);
-  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
-  s=s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+function copyMsg(text) { navigator.clipboard.writeText(text).catch(() => {}); }
+
+function resendMsg(idx) {
+  if (streaming) return;
+  if (idx < 1) return;
+  const userMsg = messages[idx - 1];
+  if (!userMsg || userMsg.role !== "user") return;
+  messages.splice(idx);
+  sendMsg(userMsg.content);
+}
+
+// ===== Markdown =====
+function md(t) {
+  let s = esc(t);
+  const codeBlocks = [];
+  s = s.replace(/```(\w*)\n([\s\S]*?)```/g, (_, l, c) => { codeBlocks.push(c); return `%%CODEBLOCK${codeBlocks.length-1}%%`; });
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  s = s.replace(/\*(.+?)\*/g, "<i>$1</i>");
+  s = s.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  s = s.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  s = s.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  s = s.replace(/^- (.+)$/gm, "• $1");
+  s = s.replace(/\n/g, "<br>");
+  codeBlocks.forEach((c, i) => { s = s.replace(`%%CODEBLOCK${i}%%`, `<pre><code>${c}</code></pre>`); });
   return s;
 }
 
-function render(){
-  const root=$("#root");
-  const scrolled=($(".messages")?.scrollTop||0)+($(".messages")?.clientHeight||0)>=($(".messages")?.scrollHeight||0)-50;
-  let html=`<div class="app">`;
-  html+=`<div class="header"><span class="header-title">Memi</span><button class="header-btn" onclick="showSettings=true;render()">⚙</button></div>`;
-  const dotClass=serverUrl?"on":"off";
-  const dotLabel=serverUrl?"已连接"+(serverUrl.replace(/https?:\/\//,"").slice(0,30)):"未连接 — 点击设置";
-  html+=`<div class="status" onclick="showSettings=true;render()"><div class="status-dot ${dotClass}"></div>${dotLabel}</div>`;
-  html+=`<div class="messages" id="msgs"><div class="messages-inner">`;
-  if(messages.length===0){
-    html+=`<div class="empty"><div class="empty-icon">🦞</div><div class="empty-title">有什么我可以帮你的？</div><div class="chips">`;
-    ["写一首诗","帮我写个脚本","打开计算器","截个屏","帮我整理桌面","今天天气"].forEach(t=>{html+=`<div class="chip" onclick="sendMsg('${t}')">${t}</div>`});
-    html+=`</div></div>`;
-  }else{
-    messages.forEach(m=>{
-      if(!m.content&&m.role!=="user")return;
-      const isUser=m.role==="user";
-      html+=`<div class="msg ${isUser?"user":"ai"}">`;
-      html+=`<div class="avatar">${isUser?"U":"M"}</div>`;
-      html+=`<div class="bubble">`;
-      if(m.tools){m.tools.forEach(tool=>{
-        html+=`<div class="tool" onclick="this.classList.toggle('open')"><span class="tool-icon">⚙</span><span class="tool-name">${tool.name}</span><span class="tool-arrow">▼</span><div class="tool-result">${esc(tool.result)}</div></div>`;
-      })}
-      html+=md(m.content);
-      html+=`<div style="font-size:12px;margin-top:4px;color:${isUser?"rgba(255,255,255,.5)":"var(--dim2)"}">${m.time}</div>`;
-      html+=`</div></div>`;
+function scrollBottom() {
+  setTimeout(() => { const c = $(".content"); if (c) c.scrollTop = c.scrollHeight; }, 10);
+}
+
+function setInput(v) {
+  draftText = v;
+  const ta = $("#inputArea");
+  if (ta) { ta.value = v; ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 200) + "px"; }
+}
+
+// ===== SVG Icons =====
+const icons = {
+  settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
+  send: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`,
+  mic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`,
+  like: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>`,
+  dislike: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/></svg>`,
+  refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>`,
+};
+
+// ===== Render =====
+function render() {
+  const root = $("#root");
+  const filtered = sessions.filter(s => !searchQuery || s.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  let html = `<div class="app">`;
+
+  html += `<div class="sidebar-mask${sidebarOpen?" show":""}" onclick="sidebarOpen=false;render()"></div>`;
+
+  // Sidebar
+  html += `<nav class="sidebar${sidebarOpen?" open":""}">`;
+  html += `<div class="sidebar-header">`;
+  html += `<div class="sidebar-brand">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    Memi
+  </div>`;
+  html += `<div class="sidebar-actions">`;
+  html += `<button class="sidebar-btn" onclick="newSession();render()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg> 新聊天</button>`;
+  html += `<button class="sidebar-btn" onclick="showSettings=true;settingsTab='connection';render()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> 设置</button>`;
+  html += `</div></div>`;
+
+  html += `<div class="sidebar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input placeholder="搜索聊天..." value="${esc(searchQuery)}" oninput="searchQuery=this.value;render()">
+  </div>`;
+
+  html += `<div class="sidebar-label">最近</div>`;
+  html += `<div class="sidebar-list">`;
+  filtered.forEach(s => {
+    const active = s.id === currentSessionId;
+    html += `<div class="sidebar-item${active?" active":""}" onclick="loadSession('${s.id}')">`;
+    html += `<span class="sidebar-item-text">${esc(s.title)}</span>`;
+    html += `<button class="sidebar-item-del" onclick="deleteSession('${s.id}',event)" title="删除">✕</button>`;
+    html += `</div>`;
+  });
+  if (!filtered.length) html += `<div style="padding:20px;text-align:center;color:var(--dim2);font-size:13px">没有找到</div>`;
+  html += `</div>`;
+
+  // Todo in sidebar
+  html += `<div class="sidebar-label" style="display:flex;align-items:center;justify-content:space-between">`;
+  html += `<span>待办 ${todos.length ? '(' + todos.filter(t=>!t.done).length + ')' : ''}</span>`;
+  html += `<button onclick="showTodoInput=!showTodoInput" style="background:none;border:none;cursor:pointer;color:var(--dim2);font-size:18px;line-height:1;padding:0">+</button>`;
+  html += `</div>`;
+  if (showTodoInput) {
+    html += `<div style="padding:0 12px 8px;display:flex;gap:6px">`;
+    html += `<input id="todoSidebarInput" placeholder="新待办..." style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;background:var(--bg);color:var(--text);outline:none" onkeydown="if(event.key==='Enter'){todoAdd(this.value);this.value='';showTodoInput=false}">`;
+    html += `</div>`;
+  }
+  if (todos.length) {
+    html += `<div style="padding:0 8px 8px;max-height:200px;overflow-y:auto">`;
+    todos.forEach((t, i) => {
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;${t.done?'opacity:.45':''};font-size:12px" onmouseover="this.style.background='rgba(128,128,128,.1)'" onmouseout="this.style.background='none'">`;
+      html += `<div onclick="todoToggle(${i})" style="width:14px;height:14px;border:1.5px solid ${t.done?'var(--blue)':'var(--dim2)'};border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${t.done?'var(--blue)':'none'}">${t.done?'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="8" height="8"><path d="M5 13l4 4L19 7"/></svg>':''}</div>`;
+      html += `<span style="flex:1;${t.done?'text-decoration:line-through;color:var(--dim2)':''}">${esc(t.title)}</span>`;
+      html += `<button onclick="todoRemove(${i})" style="background:none;border:none;cursor:pointer;color:var(--dim2);font-size:12px;padding:0 2px;opacity:0" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">✕</button>`;
+      html += `</div>`;
     });
+    html += `</div>`;
+  } else {
+    html += `<div style="padding:4px 16px 12px;font-size:11px;color:var(--dim2)">暂无待办</div>`;
   }
-  if(streaming&&messages.length>0&&!messages[messages.length-1].content){
-    html+=`<div class="msg ai"><div class="avatar">M</div><div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+
+  html += `<div class="sidebar-footer">`;
+  html += `<div class="sidebar-user" onclick="showSettings=true;settingsTab='general';render()">`;
+  html += `<div class="sidebar-avatar">U</div>`;
+  html += `<div class="sidebar-user-info"><div class="sidebar-user-name">用户</div><div class="sidebar-user-plan">Memi</div></div>`;
+  html += `</div></div></nav>`;
+
+  // Main
+  html += `<div class="main">`;
+  html += `<div class="main-header">`;
+  html += `<button class="menu-btn" onclick="sidebarOpen=!sidebarOpen;render()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>`;
+  const modelName = MODELS.find(m => m.id === settings.model)?.name || settings.model;
+  html += `<div class="model-select" onclick="showSettings=true;settingsTab='model';render()"><span>${modelName}</span><span class="model-arrow">▼</span></div>`;
+  html += `<div class="header-spacer"></div>`;
+  const connClass = serverUrl ? "on" : "off";
+  const connText = serverUrl ? "已连接" : "未连接";
+  html += `<div class="conn-badge ${connClass}" onclick="showSettings=true;settingsTab='connection';render()"><div class="conn-dot"></div>${connText}</div>`;
+  html += `</div>`;
+
+  // Content
+  html += `<div class="content"><div class="content-inner">`;
+
+  if (messages.length === 0) {
+    html += `<div class="empty-state">`;
+    html += `<div class="empty-title">你今天在想些什么？</div>`;
+    html += `<div class="quick-actions">`;
+    html += `<div class="quick-chip" onclick="sendMsg('帮我写一段代码')">写代码</div>`;
+    html += `<div class="quick-chip" onclick="sendMsg('生成一张图片')">生成图片</div>`;
+    html += `<div class="quick-chip" onclick="sendMsg('帮我搜索一下')">查找资料</div>`;
+    html += `<div class="quick-chip" onclick="sendMsg('帮我翻译')">翻译</div>`;
+    html += `</div></div>`;
+  } else {
+    html += `<div class="messages">`;
+    messages.forEach((m, i) => {
+      if (!m.content && m.role !== "user") return;
+      const isUser = m.role === "user";
+      html += `<div class="msg ${isUser?"user":""}">`;
+      html += `<div class="msg-avatar">${isUser?"U":"M"}</div>`;
+      html += `<div class="msg-body">`;
+      if (m.tools && m.tools.length) {
+        m.tools.forEach(tool => {
+          html += `<div class="tool-call" onclick="this.classList.toggle('open')">`;
+           html += `<span class="tool-call-icon">[tool]</span>`;
+          html += `<span class="tool-call-name">${esc(tool.name)}</span>`;
+          html += `<span class="tool-call-arrow">▼</span>`;
+          html += `<div class="tool-call-result">${esc(tool.result)}</div></div>`;
+        });
+      }
+      html += `<div class="msg-content" ${streaming && i === messages.length - 1 && !isUser ? 'id="msg-content-last"' : ''}>${md(m.content)}</div>`;
+      if (!isUser && m.content) {
+        html += `<div class="msg-actions">`;
+        html += `<button class="msg-action" onclick="copyMsg(messages[${i}].content)" title="复制">${icons.copy}</button>`;
+        html += `<button class="msg-action" title="点赞">${icons.like}</button>`;
+        html += `<button class="msg-action" title="点踩">${icons.dislike}</button>`;
+        html += `<button class="msg-action" onclick="resendMsg(${i})" title="重新生成">${icons.refresh}</button>`;
+        html += `</div>`;
+      }
+      html += `</div></div>`;
+    });
+    if (streaming && messages.length && !messages[messages.length-1].content) {
+      html += `<div class="msg"><div class="msg-avatar">M</div><div class="msg-body"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
+    }
+    html += `</div>`;
   }
-  html+=`</div></div>`;
-  html+=`<div class="input-wrap"><div class="input-inner">`;
-  html+=`<textarea class="input-box" id="inp" placeholder="发消息..." rows="1" ${streaming?"disabled":""}></textarea>`;
-  html+=`<button class="send-btn ${streaming?"off":"on"}" id="sendBtn" onclick="sendMsg($('#inp').value)" ${streaming?"disabled":""}><span class="send-icon">↑</span></button>`;
-  html+=`</div></div></div>`;
-  if(showSettings){
-    html+=`<div class="modal-bg show" onclick="if(event.target===this){showSettings=false;render()}">`;
-    html+=`<div class="modal"><div class="modal-head"><span class="modal-title">服务器设置</span><button class="modal-close" onclick="showSettings=false;render()">✕</button></div>`;
-    html+=`<div class="modal-label">服务器地址</div>`;
-    html+=`<input class="modal-input" id="urlInput" value="${esc(serverUrl||"")}" placeholder="http://192.168.x.x:3001" autocapitalize="off">`;
-    html+=`<div class="modal-hint">电脑端运行 memi expose lan 后填入地址<br>或使用 ngrok 暴露到公网</div>`;
-    html+=`<button class="modal-btn" onclick="connect()">连接</button>`;
-    html+=`<div class="modal-status" id="connStatus"></div>`;
-    html+=`</div></div>`;
+
+  html += `</div></div>`;
+
+  // Input
+  html += `<div class="input-area"><div class="input-container">`;
+  html += `<div class="input-box">`;
+  html += `<button class="input-btn" title="添加附件">${icons.plus}</button>`;
+  html += `<textarea class="input-textarea" id="inputArea" placeholder="有问题，尽管问" rows="1" ${streaming?"disabled":""}></textarea>`;
+  html += `<button class="input-btn" title="语音输入" onclick="toggleVoice()">${icons.mic}</button>`;
+  html += `<button class="send-btn ${(streaming||!$("#inputArea")?.value?.trim())?"empty":"ready"}" id="sendBtn" onclick="sendMsg($('#inputArea')?.value||'')" ${streaming?"disabled":""}>${icons.send}</button>`;
+  html += `</div>`;
+  html += `<div class="input-disclaimer">Memi 也可能会犯错。请核查重要信息。</div>`;
+  html += `</div></div>`;
+
+  html += `</div></div>`;
+
+  // Settings Panel
+  if (showSettings) {
+    html += `<div class="settings-overlay show" onclick="if(event.target===this){showSettings=false;render()}">`;
+    html += `<div class="settings-panel">`;
+    html += `<div class="settings-header"><span class="settings-title">设置</span><button class="settings-close" onclick="showSettings=false;render()">✕</button></div>`;
+    html += `<div class="settings-body">`;
+
+    // Tab navigation
+    const tabs = [
+      { id: "connection", label: "连接" },
+      { id: "model", label: "模型" },
+      { id: "persona", label: "人格" },
+      { id: "general", label: "通用" },
+      { id: "api", label: "API Key" },
+    ];
+    html += `<div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:8px">`;
+    tabs.forEach(t => {
+      const active = settingsTab === t.id;
+      html += `<button style="padding:6px 12px;border:none;background:${active?"var(--text)":"none"};color:${active?"var(--bg)":"var(--dim)"};border-radius:6px;font-size:13px;cursor:pointer;font-weight:${active?"600":"400"}" onclick="settingsTab='${t.id}';render()">${t.label}</button>`;
+    });
+    html += `</div>`;
+
+    // Connection tab
+    if (settingsTab === "connection") {
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-card">`;
+      html += `<div class="settings-row"><div><div class="settings-row-label">服务器地址</div><div class="settings-row-desc">填入 memi-server 的地址</div></div></div>`;
+      html += `<input class="settings-input" id="urlInput" value="${esc(serverUrl||"")}" placeholder="http://192.168.x.x:3001" autocapitalize="off">`;
+      html += `<div class="settings-hint">电脑端运行 <code style="background:var(--bg3);padding:2px 6px;border-radius:4px">memi server</code> 启动服务<br>运行 <code style="background:var(--bg3);padding:2px 6px;border-radius:4px">memi expose lan</code> 暴露到局域网</div>`;
+      html += `<button class="settings-btn" style="margin-top:12px;background:var(--text);color:var(--bg)" onclick="doConnect()">连接</button>`;
+      html += `<div class="modal-status" id="connStatus"></div>`;
+      html += `</div></div>`;
+    }
+
+    // Model tab
+    if (settingsTab === "model") {
+      // 已配置提供商的模型
+      const configuredModels = [];
+      ["api1","api2","api3"].forEach(provId => {
+        const cfg = serverConfig[provId];
+        if (cfg?.model && cfg?.apiKey) {
+          const provLabel = { api1: "主", api2: "备用1", api3: "备用2" };
+          configuredModels.push({ id: cfg.model, name: cfg.model, desc: `${provLabel[provId]}提供商`, provider: provId });
+        }
+      });
+
+      if (configuredModels.length) {
+        html += `<div class="settings-section">`;
+        html += `<div class="settings-section-title">已配置的模型</div>`;
+        html += `<div class="settings-grid">`;
+        configuredModels.forEach(m => {
+          const active = settings.model === m.id;
+          html += `<div class="settings-btn${active?" active":""}" onclick="setModel('${m.id}')"><div style="font-weight:500">${m.name}</div><div style="font-size:11px;opacity:.6;margin-top:2px">${m.desc}</div></div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">预设模型</div>`;
+      html += `<div class="settings-grid">`;
+      MODELS.forEach(m => {
+        const active = settings.model === m.id;
+        html += `<div class="settings-btn${active?" active":""}" onclick="setModel('${m.id}')"><div style="font-weight:500">${m.name}</div><div style="font-size:11px;opacity:.6;margin-top:2px">${m.desc}</div></div>`;
+      });
+      html += `</div></div>`;
+
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">温度 (创意度)</div>`;
+      html += `<div class="settings-card">`;
+      html += `<div style="display:flex;align-items:center;gap:12px">`;
+      html += `<input type="range" class="settings-slider" min="0" max="2" step="0.1" value="${settings.temperature}" oninput="settings.temperature=parseFloat(this.value);document.getElementById('tempVal').textContent=this.value;saveAll()">`;
+      html += `<span id="tempVal" style="font-size:14px;font-weight:500;min-width:30px">${settings.temperature}</span>`;
+      html += `</div>`;
+      html += `<div class="settings-hint">0 = 精确，1 = 均衡，2 = 创意</div>`;
+      html += `</div></div>`;
+    }
+
+    // Persona tab
+    if (settingsTab === "persona") {
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">选择人格</div>`;
+      html += `<div class="settings-grid">`;
+      PERSONAS.forEach(p => {
+        const active = settings.persona === p.id;
+         html += `<div class="settings-btn${active?" active":""}" onclick="setPersona('${p.id}')"><div style="font-weight:500">${p.name}</div><div style="font-size:11px;opacity:.6;margin-top:2px">${p.desc}</div></div>`;
+      });
+      html += `</div></div>`;
+
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">自定义系统提示词</div>`;
+      html += `<textarea class="settings-textarea" placeholder="可选：输入自定义系统提示词..." oninput="saveSystemPrompt(this.value)">${esc(settings.systemPrompt||"")}</textarea>`;
+      html += `<div class="settings-hint">自定义提示词会追加到人格提示词后面</div>`;
+      html += `</div>`;
+    }
+
+    // General tab
+    if (settingsTab === "general") {
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">主题</div>`;
+      html += `<div class="settings-card">`;
+      html += `<div style="display:flex;gap:8px">`;
+      ["light","dark","system"].forEach(t => {
+        const labels = { light: "浅色", dark: "深色", system: "跟随系统" };
+        const active = settings.theme === t;
+        html += `<div class="settings-btn${active?" active":""}" style="flex:1" onclick="settings.theme='${t}';applyTheme('${t}');saveAll();render()">${labels[t]}</div>`;
+      });
+      html += `</div></div></div>`;
+
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">语音</div>`;
+      html += `<div class="settings-card">`;
+      html += `<div class="settings-row"><div><div class="settings-row-label">启用语音输入</div><div class="settings-row-desc">点击麦克风按钮进行语音输入</div></div>`;
+      html += `<div onclick="settings.voiceEnabled=!settings.voiceEnabled;saveAll();render()" style="width:44px;height:24px;border-radius:12px;background:${settings.voiceEnabled?"var(--text)":"var(--border)"};cursor:pointer;position:relative;transition:background .2s"><div style="width:20px;height:20px;border-radius:50%;background:${settings.voiceEnabled?"var(--bg)":"var(--bg2)"};position:absolute;top:2px;${settings.voiceEnabled?"right:2px":"left:2px"};transition:all .2s"></div></div>`;
+      html += `</div></div></div>`;
+
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">数据</div>`;
+      html += `<button class="settings-danger" onclick="if(confirm('确定清空所有聊天记录？')){sessions=[];messages=[];newSession();render()}">清空所有聊天记录</button>`;
+      html += `</div>`;
+    }
+
+    // API Key tab - 与 CLI 提供商完全同步
+    if (settingsTab === "api") {
+      html += `<div class="settings-section">`;
+      html += `<div class="settings-section-title">模型提供商</div>`;
+      html += `<div class="settings-hint" style="margin-bottom:16px">配置 API Key，与 CLI 的 <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">memi provider</code> 互通</div>`;
+
+      // 完整提供商列表（与 CLI 一致）
+      const ALL_PROVIDERS = [
+        { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", models: "gpt-4o,gpt-4o-mini,o1,o3-mini,o4-mini", keyPH: "sk-..." },
+        { id: "anthropic", name: "Anthropic", url: "https://api.anthropic.com/v1", models: "claude-sonnet-4-20250514,claude-3-5-sonnet,claude-3-5-haiku,claude-3-opus", keyPH: "sk-ant-..." },
+        { id: "gemini", name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai", models: "gemini-2.5-pro,gemini-2.5-flash,gemini-2.0-flash", keyPH: "AIza..." },
+        { id: "groq", name: "Groq", url: "https://api.groq.com/openai/v1", models: "llama-3.3-70b-versatile,llama-3.1-8b-instant,llama-3.1-70b-versatile,mixtral-8x7b-32768", keyPH: "gsk_..." },
+        { id: "deepseek", name: "DeepSeek", url: "https://api.deepseek.com/v1", models: "deepseek-chat,deepseek-reasoner", keyPH: "sk-..." },
+        { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", models: "openai/gpt-4o,openai/gpt-4o-mini,anthropic/claude-sonnet,anthropic/claude-3.5-sonnet,google/gemini-flash-2.0,meta-llama/llama-3.1-70b-instruct,deepseek/deepseek-chat,perplexity/sonar-large,mistralai/mixtral-8x22b", keyPH: "sk-or-..." },
+        { id: "together", name: "Together AI", url: "https://api.together.xyz/v1", models: "meta-llama/Llama-3.3-70B-Instruct-Turbo,meta-llama/Llama-3.1-405B-Instruct-Turbo,meta-llama/Llama-3.1-70B-Instruct-Turbo,deepseek-ai/DeepSeek-V3,google/gemma-2-27b-it,mistralai/Mixtral-8x22B-Instruct-v0.1" },
+        { id: "perplexity", name: "Perplexity", url: "https://api.perplexity.ai", models: "llama-3.1-sonar-large-128k-online,llama-3.1-sonar-small-128k-online,llama-3.1-sonar-huge-128k-online", keyPH: "pplx-..." },
+        { id: "cohere", name: "Cohere", url: "https://api.cohere.com/v2", models: "command-r-plus,command-r,command-light" },
+        { id: "mistral", name: "Mistral AI", url: "https://api.mistral.ai/v1", models: "mistral-large-latest,mistral-small-latest,mistral-medium-latest,codestral-latest" },
+        { id: "xai", name: "xAI Grok", url: "https://api.x.ai/v1", models: "grok-3,grok-3-mini,grok-2", keyPH: "xai-..." },
+        { id: "cloudflare", name: "Cloudflare Workers AI", url: "https://api.cloudflare.com/client/v4", models: "@cf/meta/llama-3.3-70b-instruct-fp16,@cf/meta/llama-3.1-8b-instruct,@cf/mistral/mistral-7b-instruct-v0.2" },
+        { id: "alibaba", name: "阿里云百炼", url: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: "qwen-max,qwen-plus,qwen-turbo,qwen-long,qwen-vl-max,qwen-vl-plus", keyPH: "sk-..." },
+        { id: "zhipu", name: "智谱 AI", url: "https://open.bigmodel.cn/api/paas/v4", models: "glm-4-plus,glm-4-flash,glm-4-air,glm-4-long,glm-4v-plus,glm-4v-flash" },
+        { id: "volcengine", name: "火山方舟", url: "https://ark.cn-beijing.volces.com/api/v3", models: "doubao-pro-256k,doubao-pro-128k,doubao-lite-128k,doubao-lite-32k" },
+        { id: "kimi", name: "Kimi (Moonshot)", url: "https://api.moonshot.cn/v1", models: "moonshot-v1-128k,moonshot-v1-32k,moonshot-v1-8k", keyPH: "sk-..." },
+        { id: "siliconflow", name: "硅基流动", url: "https://api.siliconflow.cn/v1", models: "Qwen/Qwen2.5-72B-Instruct,deepseek-ai/DeepSeek-V3,deepseek-ai/DeepSeek-R1,meta-llama/Llama-3.1-70B-Instruct", keyPH: "sk-..." },
+        { id: "nvidia", name: "NVIDIA NIM", url: "https://integrate.api.nvidia.com/v1", models: "meta/llama-3.3-70b-instruct,meta/llama-3.1-70b-instruct,meta/llama-3.1-8b-instruct,deepseek-ai/deepseek-r1", keyPH: "nvapi-..." },
+        { id: "xfyun", name: "讯飞星火", url: "https://spark-api-open.xf-yun.com/v1", models: "4.0Ultra,max,pro,pro-128k,lite", keyPH: "讯飞控制台获取" },
+        { id: "ollama", name: "Ollama (本地)", url: "http://localhost:11434/v1", models: "llama3.1:70b,llama3.1:8b,qwen2.5:72b,qwen2.5:7b,deepseek-v3,deepseek-r1,gemma2:27b,mistral" },
+        { id: "lmstudio", name: "LM Studio (本地)", url: "http://localhost:1234/v1", models: "local-model" },
+        { id: "custom", name: "自定义", url: "", models: "" },
+      ];
+
+      // 从服务器配置读取已配置的提供商
+      const configured = serverConfig.providers || {};
+      const activeProvId = settings.activeProvider || "";
+
+      // 已配置列表
+      const configuredList = Object.entries(configured).filter(([_, v]) => v);
+
+      if (configuredList.length) {
+        html += `<div class="settings-section-title" style="margin-top:0">已配置 (${configuredList.length})</div>`;
+        configuredList.forEach(([id, cfg]) => {
+           const prov = ALL_PROVIDERS.find(p => p.id === id) || { name: id };
+          const isActive = activeProvId === id;
+          const isOpen = settings.openProvider === id;
+
+          html += `<div style="margin-bottom:10px;border:1px solid ${isActive?"var(--text)":"var(--border)"};border-radius:10px;overflow:hidden;${isActive?"background:var(--bg2)":""}">`;
+          html += `<div style="display:flex;align-items:center;gap:8px;padding:12px;cursor:pointer" onclick="settings.openProvider=settings.openProvider==='${id}'?'':'${id}';render()">`;
+           html += `<div style="flex:1;min-width:0">`;
+          html += `<div style="font-size:14px;font-weight:500">${prov.name}</div>`;
+          html += `<div style="font-size:11px;color:var(--dim2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cfg.model||"未指定模型"}</div>`;
+          html += `</div>`;
+          if (isActive) html += `<span style="font-size:11px;color:var(--blue);font-weight:500">使用中</span>`;
+          else html += `<button style="font-size:11px;color:var(--dim2);background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer" onclick="event.stopPropagation();activateProvider('${id}')">切换</button>`;
+          html += `<button style="font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;padding:4px" onclick="event.stopPropagation();removeProvider('${id}')" title="删除">✕</button>`;
+          html += `<span style="font-size:10px;color:var(--dim2);transform:rotate(${isOpen?"180":"0"}deg);transition:transform .2s">▼</span>`;
+          html += `</div>`;
+
+          if (isOpen) {
+            html += `<div style="padding:0 12px 12px;border-top:1px solid var(--border)">`;
+            html += `<div style="font-size:12px;color:var(--dim2);margin-bottom:4px">Base URL</div>`;
+            html += `<input class="settings-input" id="baseUrl_${id}" value="${esc(cfg.baseUrl||"")}">`;
+            html += `<div style="font-size:12px;color:var(--dim2);margin-bottom:4px;margin-top:8px">模型</div>`;
+            html += `<input class="settings-input" id="model_${id}" value="${esc(cfg.model||"")}">`;
+            html += `<div style="font-size:12px;color:var(--dim2);margin-bottom:4px;margin-top:8px">API Key</div>`;
+            html += `<input class="settings-input" type="password" id="key_${id}" value="${esc(cfg.apiKey||"")}">`;
+            html += `<button class="settings-btn" style="margin-top:12px;background:var(--text);color:var(--bg)" onclick="saveProvider('${id}')">保存</button>`;
+            html += `</div>`;
+          }
+          html += `</div>`;
+        });
+        html += `<div class="settings-divider"></div>`;
+      }
+
+      // 添加新提供商
+      html += `<div class="settings-section-title">添加提供商</div>`;
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+       ALL_PROVIDERS.forEach(p => {
+         const isAdded = !!configured[p.id];
+         html += `<div class="settings-tag${isAdded?" active":""}" style="${isAdded?"opacity:.5;cursor:default":""}" onclick="${isAdded?"":"addProvider('"+p.id+"')"}">${p.name}</div>`;
+       });
+      html += `</div>`;
+
+      // 自定义提供商
+      html += `<div style="margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:12px">`;
+      html += `<div style="font-size:13px;font-weight:500;margin-bottom:8px">自定义提供商</div>`;
+      html += `<input class="settings-input" id="customId" placeholder="ID (如 myai)" style="margin-bottom:8px">`;
+      html += `<input class="settings-input" id="customUrl" placeholder="Base URL" style="margin-bottom:8px">`;
+      html += `<input class="settings-input" id="customModel" placeholder="默认模型" style="margin-bottom:8px">`;
+      html += `<input class="settings-input" type="password" id="customKey" placeholder="API Key" style="margin-bottom:8px">`;
+      html += `<button class="settings-btn" style="background:var(--text);color:var(--bg)" onclick="addCustomProvider()">添加</button>`;
+      html += `</div>`;
+
+      html += `</div>`;
+    }
+
+    html += `</div></div></div>`;
   }
-  root.innerHTML=html;
-  const inp=$("#inp");
-  if(inp){
-    inp.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg(inp.value)}};
-    inp.oninput=function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,200)+"px"};
-    inp.focus();
+
+  html += `</div>`;
+  root.innerHTML = html;
+
+  const ta = $("#inputArea");
+  if (ta) {
+    ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(ta.value); } };
+    ta.oninput = function() { draftText = this.value; this.style.height = "auto"; this.style.height = Math.min(this.scrollHeight, 200) + "px"; updateSendBtn(); };
+    if (draftText && !streaming) { ta.value = draftText; ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 200) + "px"; }
+    ta.focus();
   }
-  if(scrolled){const m=$("#msgs");if(m)m.scrollTop=m.scrollHeight}
+
+  scrollBottom();
 }
 
-async function connect(){
-  const url=$("#urlInput")?.value?.trim();
-  if(!url)return;
-  const s=$("#connStatus");if(s)s.textContent="正在连接...";
-  const ok=await health(url);
-  if(ok){
-    serverUrl=url;showSettings=false;
-    localStorage.setItem("memi-url",url);
+function updateSendBtn() {
+  const ta = $("#inputArea");
+  const btn = $("#sendBtn");
+  if (ta && btn) btn.className = "send-btn " + (ta.value.trim() ? "ready" : "empty");
+}
+
+async function doConnect() {
+  const url = $("#urlInput")?.value?.trim();
+  if (!url) return;
+  const s = $("#connStatus");
+  if (s) { s.textContent = "正在连接..."; s.className = "modal-status"; }
+  const ok = await health(url);
+  if (ok) {
+    serverUrl = url;
+    localStorage.setItem("memi-url", url);
+    await loadServerConfig();
+    showSettings = false;
     render();
-  }else{
-    if(s){s.textContent="连接失败";s.className="modal-status err"}
+  } else {
+    serverUrl = "";
+    localStorage.removeItem("memi-url");
+    if (s) { s.textContent = "连接失败"; s.className = "modal-status err"; }
   }
 }
 
-function setInput(v){const inp=$("#inp");if(inp){inp.value=v;inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,200)+"px"}}
+async function setModel(modelId) {
+  settings.model = modelId;
+  saveAll();
+  const providers = serverConfig.providers || {};
+  let matched = false;
+  for (const [id, cfg] of Object.entries(providers)) {
+    if (cfg.model === modelId) {
+      await saveServerConfig({ api1: { baseUrl: cfg.baseUrl, model: cfg.model, apiKey: cfg.apiKey } });
+      settings.activeProvider = id;
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) {
+    await saveServerConfig({ api1: { ...serverConfig.api1, model: modelId } });
+  }
+  saveAll();
+  render();
+}
 
-function save(){try{localStorage.setItem("memi-msgs",JSON.stringify(messages.slice(-100)))}catch{}}
-function load(){try{const s=localStorage.getItem("memi-msgs");if(s)messages=JSON.parse(s)}catch{}}
+async function setPersona(personaId) {
+  settings.persona = personaId;
+  saveAll();
+  await saveSystemPromptToServer();
+  render();
+}
 
-load();render();
-if(serverUrl){health(serverUrl).then(ok=>{if(!ok)serverUrl="";render()})}
+let systemPromptTimer = null;
+async function saveSystemPrompt(prompt) {
+  settings.systemPrompt = prompt;
+  saveAll();
+  if (systemPromptTimer) clearTimeout(systemPromptTimer);
+  systemPromptTimer = setTimeout(() => saveSystemPromptToServer(), 500);
+}
+
+async function saveSystemPromptToServer() {
+  let sysContent = settings.systemPrompt || "";
+  const persona = PERSONAS.find(p => p.id === settings.persona);
+  if (persona && persona.id !== "default") {
+    sysContent = (sysContent ? sysContent + "\n\n" : "") + `你是一个${persona.name}角色。${persona.desc}。`;
+  }
+  await saveServerConfig({ agents: [{ name: "default", model: settings.model, systemPrompt: sysContent }] });
+}
+
+async function activateProvider(provId) {
+  const providers = serverConfig.providers || {};
+  const cfg = providers[provId];
+  if (!cfg?.baseUrl) { alert("请先填写 Base URL"); return; }
+  if (!cfg?.apiKey) { alert("请先填写 API Key"); return; }
+  settings.model = cfg.model;
+  settings.activeProvider = provId;
+  saveAll();
+  await saveServerConfig({ api1: { baseUrl: cfg.baseUrl, model: cfg.model, apiKey: cfg.apiKey } });
+  await loadServerConfig();
+  render();
+}
+
+async function removeProvider(provId) {
+  if (!confirm("确定删除此提供商？")) return;
+  const providers = serverConfig.providers || {};
+  delete providers[provId];
+  if (settings.activeProvider === provId) {
+    settings.activeProvider = "";
+    settings.model = "";
+  }
+  saveAll();
+  await saveServerConfig({ providers });
+  await loadServerConfig();
+  render();
+}
+
+function addProvider(provId) {
+  const providers = serverConfig.providers || {};
+  if (providers[provId]) return;
+  const ALL_PROVIDERS = {
+    openai: { url: "https://api.openai.com/v1", model: "gpt-4o" },
+    anthropic: { url: "https://api.anthropic.com/v1", model: "claude-sonnet-4-20250514" },
+    gemini: { url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.5-pro" },
+    groq: { url: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
+    deepseek: { url: "https://api.deepseek.com/v1", model: "deepseek-chat" },
+    openrouter: { url: "https://openrouter.ai/api/v1", model: "openai/gpt-4o" },
+    together: { url: "https://api.together.xyz/v1", model: "meta-llama/Llama-3.3-70B-Instruct-Turbo" },
+    perplexity: { url: "https://api.perplexity.ai", model: "llama-3.1-sonar-large-128k-online" },
+    cohere: { url: "https://api.cohere.com/v2", model: "command-r-plus" },
+    mistral: { url: "https://api.mistral.ai/v1", model: "mistral-large-latest" },
+    xai: { url: "https://api.x.ai/v1", model: "grok-3" },
+    cloudflare: { url: "https://api.cloudflare.com/client/v4", model: "@cf/meta/llama-3.3-70b-instruct-fp16" },
+    alibaba: { url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-max" },
+    zhipu: { url: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4-plus" },
+    volcengine: { url: "https://ark.cn-beijing.volces.com/api/v3", model: "doubao-pro-256k" },
+    kimi: { url: "https://api.moonshot.cn/v1", model: "moonshot-v1-128k" },
+    siliconflow: { url: "https://api.siliconflow.cn/v1", model: "Qwen/Qwen2.5-72B-Instruct" },
+    nvidia: { url: "https://integrate.api.nvidia.com/v1", model: "meta/llama-3.3-70b-instruct" },
+    xfyun: { url: "https://spark-api-open.xf-yun.com/v1", model: "4.0Ultra" },
+    ollama: { url: "http://localhost:11434/v1", model: "llama3.1:70b" },
+    lmstudio: { url: "http://localhost:1234/v1", model: "local-model" },
+    custom: { url: "", model: "" },
+  };
+  const preset = ALL_PROVIDERS[provId] || { url: "", model: "" };
+  providers[provId] = { baseUrl: preset.url, model: preset.model, apiKey: "" };
+  saveServerConfig({ providers }).then(() => loadServerConfig()).then(() => {
+    settings.openProvider = provId;
+    render();
+  });
+}
+
+function addCustomProvider() {
+  const id = $("#customId")?.value?.trim();
+  const url = $("#customUrl")?.value?.trim();
+  const model = $("#customModel")?.value?.trim();
+  const key = $("#customKey")?.value?.trim();
+  if (!id || !url) { alert("请填写 ID 和 Base URL"); return; }
+  const providers = serverConfig.providers || {};
+  if (providers[id]) { alert("ID 已存在，请换一个"); return; }
+  providers[id] = { baseUrl: url, model: model || "default", apiKey: key || "" };
+  saveServerConfig({ providers }).then(() => loadServerConfig()).then(() => {
+    if ($("#customId")) $("#customId").value = "";
+    if ($("#customUrl")) $("#customUrl").value = "";
+    if ($("#customModel")) $("#customModel").value = "";
+    if ($("#customKey")) $("#customKey").value = "";
+    render();
+  });
+}
+
+async function saveProvider(provId) {
+  const baseUrl = $(`#baseUrl_${provId}`)?.value?.trim() || "";
+  const model = $(`#model_${provId}`)?.value?.trim() || "";
+  const apiKey = $(`#key_${provId}`)?.value?.trim() || "";
+
+  if (!baseUrl) { alert("请填写 Base URL"); return; }
+
+  const providers = serverConfig.providers || {};
+  providers[provId] = { baseUrl, model, apiKey };
+  const ok = await saveServerConfig({ providers });
+  if (ok) {
+    await loadServerConfig();
+    // 自动激活：如果没有活跃提供商，或正在编辑的就是当前活跃的
+    if (!settings.activeProvider || settings.activeProvider === provId) {
+      if (apiKey) {
+        settings.model = model;
+        settings.activeProvider = provId;
+        await saveServerConfig({ api1: { baseUrl, model, apiKey } });
+        await loadServerConfig();
+      }
+    }
+    render();
+  } else {
+    alert("保存失败");
+  }
+}
+
+// ===== Todo =====
+async function loadTodos() {
+  if (!serverUrl) { todos = []; return; }
+  try { const r = await fetch(serverUrl + "/api/todos", { signal: AbortSignal.timeout(3000) }); todos = await r.json(); } catch { todos = []; }
+}
+async function saveTodos() {
+  if (!serverUrl) return;
+  await fetch(serverUrl + "/api/todos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(todos) });
+}
+async function todoAdd(title) {
+  if (!title.trim()) return;
+  todos.push({ title: title.trim(), done: false, time: Date.now() });
+  await saveTodos();
+  render();
+}
+async function todoToggle(idx) {
+  if (todos[idx]) { todos[idx].done = !todos[idx].done; await saveTodos(); render(); }
+}
+async function todoRemove(idx) {
+  todos.splice(idx, 1);
+  await saveTodos();
+  render();
+}
+function startTodoPoll() {
+  if (todoPollTimer) clearInterval(todoPollTimer);
+  todoPollTimer = setInterval(async () => {
+    if (!serverUrl) return;
+    const prev = JSON.stringify(todos);
+    await loadTodos();
+    if (JSON.stringify(todos) !== prev) render();
+  }, 3000);
+}
+
+function toggleVoice() {
+  if (!settings.voiceEnabled) { alert("请在设置中启用语音输入"); return; }
+  alert("语音输入功能开发中...");
+}
+
+// ===== Start =====
+loadSession(currentSessionId);
+loadTodos().then(() => startTodoPoll());
+if (serverUrl) {
+  health(serverUrl).then(async ok => {
+    if (!ok) { serverUrl = ""; localStorage.removeItem("memi-url"); render(); }
+    else { await loadServerConfig(); render(); }
+  });
+}
+render();
 </script>
 </body>
 </html>

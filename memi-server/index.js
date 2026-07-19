@@ -134,6 +134,44 @@ app.get("/api/config", (req, res) => {
   res.json({});
 });
 
+app.post("/api/config", (req, res) => {
+  try {
+    const f = path.join(__dirname, "..", "memi-config", "config.json");
+    const newCfg = req.body;
+    let existing = {};
+    try { if (fs.existsSync(f)) existing = JSON.parse(fs.readFileSync(f, "utf8")); } catch {}
+    function deepMerge(target, source) {
+      for (const key of Object.keys(source)) {
+        if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key]) && target[key] && typeof target[key] === "object") {
+          deepMerge(target[key], source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+      return target;
+    }
+    const merged = deepMerge(existing, newCfg);
+    // 同步删除: 如果 patch 中某个对象字段被传入, 用 patch 的值完全替换
+    if (newCfg.providers && typeof newCfg.providers === "object") {
+      merged.providers = newCfg.providers;
+    }
+    fs.writeFileSync(f, JSON.stringify(merged, null, 2));
+    res.json({ success: true, config: merged });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+const TODO_FILE = path.join(__dirname, "..", "memi-config", "todos.json");
+app.get("/api/todos", (req, res) => {
+  try { if (fs.existsSync(TODO_FILE)) return res.json(JSON.parse(fs.readFileSync(TODO_FILE, "utf8"))); } catch {}
+  res.json([]);
+});
+app.post("/api/todos", (req, res) => {
+  try { fs.writeFileSync(TODO_FILE, JSON.stringify(req.body, null, 2)); res.json({ success: true }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get("/docs", (req, res) => {
   res.redirect("/dashboard");
 });
@@ -149,6 +187,8 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "memi-dashboard.html"));
 });
 app.get("/chat", (req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
   res.sendFile(path.join(__dirname, "..", "memi-web", "index.html"));
 });
 

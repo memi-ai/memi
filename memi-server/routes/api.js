@@ -681,6 +681,9 @@ router.post("/v1/chat/completions", async (req, res) => {
     return res.status(500).json({ error: { message: "请先在 Memi 设置中配置 API1" } });
   }
 
+  // 请求体中的 model 覆盖配置文件中的 model
+  if (model) config.api1.model = model;
+
   try {
     const agentMessages = (messages || []).map((m) => ({
       role: m.role,
@@ -719,7 +722,7 @@ router.post("/v1/chat/completions", async (req, res) => {
         while (i < answer.length) {
           const token = answer.slice(i, i + chunkSize);
           i += chunkSize;
-          res.write(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created: Math.floor(Date.now() / 1000), model: model || "memi-agent", choices: [{ index: 0, delta: { content: token } }] })}\n\n`);
+          res.write(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created: Math.floor(Date.now() / 1000), model: model || config.api1.model, choices: [{ index: 0, delta: { content: token } }] })}\n\n`);
           await new Promise((r) => setTimeout(r, 20));
         }
         res.write("data: [DONE]\n\n");
@@ -729,7 +732,7 @@ router.post("/v1/chat/completions", async (req, res) => {
     } else {
       res.json({
         id, object: "chat.completion", created: Math.floor(Date.now() / 1000),
-        model: model || "memi-agent",
+        model: model || config.api1.model,
         choices: [{ index: 0, message: { role: "assistant", content: answer, reasoning_content: reasoning }, finish_reason: "stop" }],
         toolCalls: toolCalls,
         usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
